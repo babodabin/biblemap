@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>성경지도</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;
+    -webkit-user-select:none;user-select:none;}
+  :root{ --sea:#aecbd6; --land:#e8dcc0; --land2:#dccead; --ink:#3a3226; --line:#b8a883;
+         --pin:#c0392b; --panel:#fff8ec; }
+  html,body{height:100%;overflow:hidden;font-family:'Noto Sans KR',sans-serif;background:#aecbd6;}
+  body{display:flex;flex-direction:column;height:100%;
+    padding-top:env(safe-area-inset-top);}
+  header{padding:10px 16px 8px;background:#fff8ec;border-bottom:1px solid #e0d4b8;z-index:5;}
+  .titlerow{display:flex;align-items:baseline;gap:8px;}
+  h1{font-family:'Gowun Batang',serif;font-size:21px;font-weight:700;color:#3a3226;}
+  h1 .en{font-size:9px;letter-spacing:0.3em;color:#a89878;font-family:'Noto Sans KR';text-transform:uppercase;}
+  #tabs{display:flex;gap:6px;margin-top:9px;}
+  .tab{flex:1;text-align:center;font-size:13px;font-weight:500;color:#9a8a68;
+    padding:8px 0;border-radius:9px;border:1px solid #e0d4b8;background:#fdfaf2;cursor:pointer;}
+  .tab.active{background:#3a3226;color:#fff8ec;border-color:#3a3226;font-weight:700;}
+
+  #mapWrap{flex:1;position:relative;overflow:hidden;background:var(--sea);touch-action:none;}
+  #mapCanvas{position:absolute;left:0;top:0;}
+
+  #hintBar{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:4;
+    background:rgba(58,50,38,0.82);color:#fff8ec;font-size:12px;padding:6px 14px;border-radius:20px;
+    white-space:nowrap;pointer-events:none;transition:opacity .4s;}
+
+  #zoomBtns{position:absolute;right:12px;bottom:16px;z-index:4;display:flex;flex-direction:column;gap:8px;}
+  .zbtn{width:42px;height:42px;border-radius:11px;background:#fff8ec;border:1px solid #d8c8a0;
+    font-size:22px;color:#3a3226;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15);
+    display:flex;align-items:center;justify-content:center;}
+  .zbtn:active{transform:translateY(1px);}
+
+  /* 정보 패널 */
+  #panel{position:absolute;left:0;right:0;bottom:0;z-index:6;background:var(--panel);
+    border-top-left-radius:20px;border-top-right-radius:20px;box-shadow:0 -6px 24px rgba(0,0,0,0.2);
+    transform:translateY(110%);transition:transform .32s cubic-bezier(.3,.8,.4,1);
+    max-height:62%;overflow-y:auto;padding:18px 20px calc(22px + env(safe-area-inset-bottom));}
+  #panel.show{transform:translateY(0);}
+  #panel .ph{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+  #pName{font-family:'Gowun Batang',serif;font-size:23px;font-weight:700;color:#2a2418;}
+  #pNow{font-size:12px;color:#9a8a68;white-space:nowrap;}
+  #pClose{position:absolute;top:14px;right:16px;width:30px;height:30px;border-radius:50%;
+    border:none;background:#ece0c8;color:#6a5d44;font-size:17px;cursor:pointer;}
+  #pMeaning{font-size:13px;color:#8a7a58;margin-top:3px;font-style:italic;}
+  #pEvents{margin-top:14px;display:flex;flex-direction:column;gap:11px;}
+  .evt{border-left:3px solid #d8b048;padding:2px 0 2px 11px;}
+  .evt .t{font-size:14px;font-weight:600;color:#3a3226;line-height:1.4;}
+  .evt .v{font-size:12px;color:#a08a60;margin-top:2px;}
+  .empty{font-size:13px;color:#a89878;margin-top:12px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="titlerow"><h1>성경지도</h1><span class="en">Bible Map</span></div>
+  <div id="tabs">
+    <div class="tab active" data-era="구약">구약</div>
+    <div class="tab" data-era="신약">신약</div>
+    <div class="tab" data-era="예수님">예수님</div>
+  </div>
+</header>
+
+<div id="mapWrap">
+  <canvas id="mapCanvas"></canvas>
+  <div id="hintBar">두 손가락으로 확대 · 끌어서 이동 · 지명을 눌러보세요</div>
+  <div id="zoomBtns">
+    <button class="zbtn" id="zin">+</button>
+    <button class="zbtn" id="zout">−</button>
+  </div>
+</div>
+
+<div id="panel">
+  <button id="pClose">×</button>
+  <div class="ph"><div id="pName"></div><div id="pNow"></div></div>
+  <div id="pMeaning"></div>
+  <div id="pEvents"></div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+
+// ── 지명 데이터 ── lat,lng 실제 좌표. era: 어느 탭에 보일지(여러 개 가능)
+const PLACES=[
+  {nm:'예루살렘', lat:31.78,lng:35.23, now:'이스라엘 예루살렘', era:['구약','신약','예수님'],
+   mean:'평화의 터', ev:[
+    {t:'다윗이 수도로 삼고 언약궤를 옮김', v:'삼하 5~6장'},
+    {t:'솔로몬이 성전을 건축함', v:'왕상 6장'},
+    {t:'예수님이 십자가에 못 박히고 부활하심', v:'마 27~28장'},
+    {t:'오순절 성령 강림, 교회의 시작', v:'행 2장'}]},
+  {nm:'베들레헴', lat:31.70,lng:35.20, now:'팔레스타인 베들레헴', era:['구약','예수님'],
+   mean:'떡집', ev:[
+    {t:'다윗이 태어나고 사무엘에게 기름부음 받음', v:'삼상 16장'},
+    {t:'룻과 보아스의 이야기 무대', v:'룻 1~4장'},
+    {t:'예수님이 태어나심', v:'눅 2:1~7'}]},
+  {nm:'나사렛', lat:32.70,lng:35.30, now:'이스라엘 나사렛', era:['예수님','신약'],
+   mean:'', ev:[
+    {t:'천사가 마리아에게 수태고지', v:'눅 1:26~38'},
+    {t:'예수님이 자라나신 고향', v:'눅 2:39~40'}]},
+  {nm:'갈릴리 바다', lat:32.83,lng:35.59, now:'갈릴리 호수(긴네렛)', era:['예수님','신약'],
+   mean:'구약의 긴네렛', ev:[
+    {t:'어부 베드로·안드레·야고보·요한을 부르심', v:'마 4:18~22'},
+    {t:'풍랑을 잠잠케 하시고 물 위를 걸으심', v:'마 8,14장'}]},
+  {nm:'가버나움', lat:32.88,lng:35.57, now:'이스라엘 가버나움 유적', era:['예수님'],
+   mean:'나훔의 마을', ev:[
+    {t:'예수님 갈릴리 사역의 본거지', v:'마 4:13'},
+    {t:'중풍병자·백부장의 하인을 고치심', v:'막 2장, 마 8장'}]},
+  {nm:'가나', lat:32.75,lng:35.34, now:'이스라엘 카프르 칸나', era:['예수님'],
+   mean:'', ev:[{t:'물로 포도주를 만드신 첫 이적', v:'요 2:1~11'}]},
+  {nm:'여리고', lat:31.87,lng:35.44, now:'팔레스타인 여리고', era:['구약','예수님'],
+   mean:'달의 도시', ev:[
+    {t:'여호수아 때 성벽이 무너짐', v:'수 6장'},
+    {t:'삭개오를 만나고 소경을 고치심', v:'눅 19장, 막 10장'}]},
+  {nm:'요단강', lat:32.0,lng:35.55, now:'요르단강', era:['구약','예수님','신약'],
+   mean:'내려가는 강', ev:[
+    {t:'이스라엘이 마른 땅으로 건넘', v:'수 3장'},
+    {t:'예수님이 세례 요한에게 세례 받으심', v:'마 3:13~17'}]},
+  {nm:'사해', lat:31.5,lng:35.45, now:'사해(死海)', era:['구약'],
+   mean:'염해', ev:[{t:'소돔과 고모라가 있던 지역으로 추정', v:'창 19장'}]},
+  {nm:'시내산', lat:28.54,lng:33.97, now:'이집트 시나이반도', era:['구약'],
+   mean:'호렙산', ev:[
+    {t:'모세가 십계명을 받음', v:'출 19~20장'},
+    {t:'엘리야가 하나님을 만남', v:'왕상 19장'}]},
+  {nm:'애굽', lat:30.0,lng:31.2, now:'이집트', era:['구약'],
+   mean:'미스라임', ev:[
+    {t:'요셉이 총리가 되고 야곱 일가가 이주', v:'창 41~47장'},
+    {t:'모세의 열 재앙과 출애굽', v:'출 7~12장'}]},
+  {nm:'다메섹', lat:33.51,lng:36.29, now:'시리아 다마스쿠스', era:['구약','신약'],
+   mean:'', ev:[
+    {t:'아람 왕국의 수도', v:'왕상 11장'},
+    {t:'사울(바울)이 빛을 보고 회심함', v:'행 9장'}]},
+  {nm:'가이사랴', lat:32.50,lng:34.89, now:'이스라엘 카이사리아', era:['신약'],
+   mean:'', ev:[
+    {t:'백부장 고넬료가 세례 받음(이방 선교)', v:'행 10장'},
+    {t:'바울이 갇혀 변론함', v:'행 23~26장'}]},
+  {nm:'욥바', lat:32.05,lng:34.75, now:'이스라엘 야파(텔아비브)', era:['구약','신약'],
+   mean:'아름다움', ev:[
+    {t:'요나가 다시스로 도망치려 배를 탐', v:'욘 1장'},
+    {t:'베드로가 환상을 보고 도르가를 살림', v:'행 9~10장'}]},
+  {nm:'브엘세바', lat:31.25,lng:34.79, now:'이스라엘 브엘세바', era:['구약'],
+   mean:'맹세의 우물', ev:[{t:'아브라함·이삭·야곱이 머문 남방의 거점', v:'창 21,26장'}]},
+  {nm:'헤브론', lat:31.53,lng:35.10, now:'팔레스타인 헤브론', era:['구약'],
+   mean:'동맹', ev:[
+    {t:'아브라함이 막벨라 굴을 매장지로 삼음', v:'창 23장'},
+    {t:'다윗이 처음 왕이 된 곳', v:'삼하 2장'}]},
+  {nm:'벧엘', lat:31.93,lng:35.22, now:'팔레스타인 베이틴', era:['구약'],
+   mean:'하나님의 집', ev:[{t:'야곱이 사다리 꿈을 꿈', v:'창 28장'}]},
+  {nm:'세겜', lat:32.21,lng:35.28, now:'팔레스타인 나블루스', era:['구약','예수님'],
+   mean:'수가 성', ev:[
+    {t:'아브라함이 가나안서 첫 제단을 쌓음', v:'창 12장'},
+    {t:'예수님이 사마리아 여인과 대화(야곱의 우물)', v:'요 4장'}]},
+  {nm:'사마리아', lat:32.28,lng:35.19, now:'팔레스타인 세바스티아', era:['구약','신약'],
+   mean:'', ev:[
+    {t:'북이스라엘 왕국의 수도', v:'왕상 16장'},
+    {t:'빌립이 복음을 전함', v:'행 8장'}]},
+  {nm:'두로', lat:33.27,lng:35.20, now:'레바논 티레', era:['구약','예수님'],
+   mean:'바위', ev:[
+    {t:'성전 건축 목재를 보낸 항구 도시', v:'왕상 5장'},
+    {t:'예수님이 가나안 여인의 딸을 고치심', v:'마 15장'}]},
+  {nm:'시돈', lat:33.56,lng:35.37, now:'레바논 사이다', era:['구약','예수님'],
+   mean:'', ev:[{t:'엘리야가 사르밧 과부를 만남', v:'왕상 17장'}]},
+  {nm:'바벨론', lat:32.54,lng:44.42, now:'이라크 힐라 부근', era:['구약'],
+   mean:'혼란', ev:[
+    {t:'바벨탑을 쌓던 곳', v:'창 11장'},
+    {t:'유다가 포로로 끌려간 제국의 수도', v:'왕하 25장, 단 1장'}]},
+  {nm:'우르', lat:30.96,lng:46.10, now:'이라크 남부', era:['구약'],
+   mean:'갈대아 우르', ev:[{t:'아브라함이 부름받아 떠난 고향', v:'창 11~12장'}]},
+  {nm:'하란', lat:36.86,lng:39.03, now:'터키 하란', era:['구약'],
+   mean:'', ev:[
+    {t:'아브라함이 가나안 가기 전 머묾', v:'창 11장'},
+    {t:'야곱이 외삼촌 라반에게 가서 일함', v:'창 29장'}]},
+  {nm:'니느웨', lat:36.36,lng:43.15, now:'이라크 모술', era:['구약'],
+   mean:'', ev:[
+    {t:'요나가 회개를 전한 앗수르의 수도', v:'욘 3장'}]},
+  {nm:'다소', lat:36.92,lng:34.89, now:'터키 타르수스', era:['신약'],
+   mean:'', ev:[{t:'사도 바울의 고향', v:'행 9:11, 21:39'}]},
+  {nm:'안디옥', lat:36.20,lng:36.16, now:'터키 안타키아', era:['신약'],
+   mean:'', ev:[
+    {t:'처음으로 그리스도인이라 불림', v:'행 11:26'},
+    {t:'바울의 전도여행 출발지', v:'행 13장'}]},
+  {nm:'에베소', lat:37.94,lng:27.34, now:'터키 셀추크', era:['신약'],
+   mean:'', ev:[
+    {t:'바울이 오래 머물며 사역', v:'행 19장'},
+    {t:'에베소서를 받은 교회', v:'엡 1장'}]},
+  {nm:'아라랏산', lat:39.70,lng:44.30, now:'터키 아라라트산', era:['구약'],
+   mean:'', ev:[{t:'노아의 방주가 머문 산', v:'창 8:4'}]},
+];
+
+// 강·바다 라벨 (참고용, 클릭 없음)
+const LABELS=[
+  {nm:'지중해', lat:33.5,lng:33.0, size:15},
+  {nm:'홍해', lat:27.5,lng:34.5, size:12},
+  {nm:'유브라데강', lat:34.5,lng:40.5, size:11},
+  {nm:'페르시아만', lat:29.5,lng:49.5, size:12},
+];
+// 현재 국가 (옅게, 방향 감 잡기용)
+const COUNTRIES=[
+  {nm:'터키', lat:39.0,lng:33.0},
+  {nm:'시리아', lat:35.0,lng:38.5},
+  {nm:'이라크', lat:33.5,lng:44.0},
+  {nm:'사우디아라비아', lat:28.5,lng:42.0},
+  {nm:'이집트', lat:28.5,lng:30.5},
+  {nm:'요르단', lat:31.0,lng:36.5},
+  {nm:'이스라엘', lat:31.0,lng:34.9},
+  {nm:'레바논', lat:33.9,lng:35.7},
+  {nm:'이란', lat:33.0,lng:47.5},
+];
+
+// ── 좌표 변환 (단순 메르카토르) ──
+const VIEW={x:0,y:0,scale:1};   // 팬/줌 상태
+let W,H,DPR;
+const mapCv=$('#mapCanvas'), ctx=mapCv.getContext('2d');
+// 투영 기준 범위
+const LON0=26, LON1=47, LAT0=27.5, LAT1=40;
+function project(lat,lng){
+  // 경도 → x (0~1), 위도 → y (메르카토르)
+  const x=(lng-LON0)/(LON1-LON0);
+  const merc=l=>Math.log(Math.tan(Math.PI/4 + l*Math.PI/360));
+  const y=(merc(LAT1)-merc(lat))/(merc(LAT1)-merc(LAT0));
+  return {x,y};
+}
+// 기본 화면맞춤 배율
+let baseW, baseH, offX=0, offY=0;
+function computeBase(){
+  // 지도 1.0 단위를 화면에 맞춤 (가로 기준)
+  baseW=W; baseH=W*1.15;  // 세로 비율 약간 길게
+  offX=0; offY=(H-baseH)/2;
+}
+function toScreen(p){
+  return {
+    x:(p.x*baseW)*VIEW.scale + VIEW.x + offX,
+    y:(p.y*baseH)*VIEW.scale + VIEW.y + offY
+  };
+}
+
+let curEra='구약';
+
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,3);
+  const wrap=$('#mapWrap');
+  W=wrap.clientWidth; H=wrap.clientHeight;
+  mapCv.width=W*DPR; mapCv.height=H*DPR;
+  mapCv.style.width=W+'px'; mapCv.style.height=H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  computeBase();
+  draw();
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  // 바다 배경
+  ctx.fillStyle='#aecbd6'; ctx.fillRect(0,0,W,H);
+
+  // 땅 덩어리 (단순 폴리곤들) — 가나안 중심 대략적 해안선
+  drawLand();
+  drawRivers();
+
+  // 현재 국가 이름 (옅게)
+  ctx.fillStyle='rgba(150,135,100,0.45)';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(const C of COUNTRIES){
+    const s=toScreen(project(C.lat,C.lng));
+    if(s.x<-60||s.x>W+60||s.y<-30||s.y>H+30) continue;
+    ctx.font='700 '+Math.max(11,13*Math.min(VIEW.scale,1.6))+'px "Noto Sans KR"';
+    ctx.fillText(C.nm, s.x, s.y);
+  }
+
+  // 라벨(바다/강)
+  ctx.fillStyle='rgba(70,100,120,0.7)';
+  ctx.font='italic '+13+'px "Gowun Batang", serif';
+  ctx.textAlign='center';
+  for(const L of LABELS){
+    const s=toScreen(project(L.lat,L.lng));
+    if(s.x<-50||s.x>W+50||s.y<-30||s.y>H+30) continue;
+    ctx.fillText(L.nm, s.x, s.y);
+  }
+
+  // 핀
+  const list=PLACES.filter(p=>p.era.includes(curEra));
+  for(const p of list){
+    const s=toScreen(project(p.lat,p.lng));
+    if(s.x<-30||s.x>W+30||s.y<-30||s.y>H+30) continue;
+    drawPin(s.x,s.y,p.nm);
+  }
+}
+
+function drawLand(){
+  ctx.fillStyle='#e8dcc0'; ctx.strokeStyle='#cbbd97'; ctx.lineWidth=1.5;
+  // 전체 비옥한 초승달 + 아라비아를 하나의 큰 육지로 (바다는 지중해/홍해/페르시아만만)
+  // 좌표는 [위도, 경도]
+  const mainland=[
+    [40,26],[40,38],[39.7,44.3],     // 터키 남부 ~ 아라랏
+    [38.5,46],[36,47],               // 동쪽(자그로스)
+    [33,48],[31,48.5],[30,48],       // 페르시아만 북안 (우르 동쪽)
+    [29.5,47],[29,45],               // 아라비아 북동
+    [27.5,44],[27.5,40],             // 아라비아 내륙 남단
+    [27.5,36],[27.5,34],             // 홍해 동안
+    [28.5,34.4],[30,34.3],           // 시나이 → 이집트 동안
+    [31,34],[31.5,34.2],             // 가나안 해안 남부
+    [32.5,34.7],[33.3,35.1],[34,35.5],[35.5,35.6], // 레반트 해안
+    [36.2,36.0],[36.6,35.5],[37,35.8],[38,36],     // 안디옥~북시리아 해안
+    [39,30],[40,26]                  // 터키 남안 서쪽으로
+  ];
+  fillGeo(mainland);
+  // 이집트(나일 서편)도 약간
+  const egypt=[[31,31.5],[31,29],[28,29],[27.5,32],[29.5,33],[31,31.5]];
+  fillGeo(egypt);
+}
+function fillGeo(coords){
+  ctx.beginPath();
+  coords.forEach((c,i)=>{ const s=toScreen(project(c[0],c[1]));
+    if(i===0)ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y); });
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+}
+function drawRivers(){
+  ctx.strokeStyle='#7fa8bd'; ctx.lineWidth=2.2; ctx.lineCap='round';
+  // 요단강 (갈릴리→사해)
+  pathGeo([[32.83,35.59],[32.4,35.55],[32.0,35.55],[31.5,35.47]]);
+  // 유브라데강
+  pathGeo([[38.5,39.5],[36.5,40],[35,40.5],[33.5,42],[32,44.5],[31,46]]);
+  // 티그리스강
+  pathGeo([[37.5,42.5],[36,43.2],[34.5,44.5],[33,45],[31.2,47]]);
+  // 나일강
+  pathGeo([[31,31.2],[29,31],[27.5,33]]);
+}
+function pathGeo(coords){
+  ctx.beginPath();
+  coords.forEach((c,i)=>{ const s=toScreen(project(c[0],c[1]));
+    if(i===0)ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y); });
+  ctx.stroke();
+}
+
+function drawPin(x,y,name){
+  // 핀
+  ctx.save();
+  ctx.fillStyle='#c0392b'; ctx.strokeStyle='#fff'; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.arc(x,y-8,6,Math.PI,0); // 위 반원
+  ctx.lineTo(x,y+2); ctx.closePath();
+  ctx.moveTo(x+6,y-8);
+  ctx.arc(x,y-8,6,0,Math.PI*2);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(x,y-8,2.3,0,7); ctx.fill();
+  // 이름표
+  ctx.font='600 12.5px "Noto Sans KR"';
+  const tw=ctx.measureText(name).width;
+  ctx.fillStyle='rgba(255,248,236,0.92)';
+  roundR(ctx, x-tw/2-5, y+3, tw+10, 17, 5); ctx.fill();
+  ctx.fillStyle='#2a2418'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(name, x, y+12);
+  ctx.restore();
+}
+function roundR(ctx,x,y,w,h,r){ ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath(); }
+
+// ── 인터랙션: 팬 + 핀치줌 + 탭 ──
+let pointers=new Map(), lastDist=0, lastMid=null, moved=false, downPt=null;
+const wrap=$('#mapWrap');
+wrap.addEventListener('pointerdown',e=>{
+  wrap.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  moved=false; downPt={x:e.clientX,y:e.clientY};
+  if(pointers.size===2){ const pts=[...pointers.values()];
+    lastDist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);
+    lastMid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2}; }
+});
+wrap.addEventListener('pointermove',e=>{
+  if(!pointers.has(e.pointerId)) return;
+  const prev=pointers.get(e.pointerId);
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pointers.size===1){
+    const dx=e.clientX-prev.x, dy=e.clientY-prev.y;
+    if(Math.abs(e.clientX-downPt.x)+Math.abs(e.clientY-downPt.y)>6) moved=true;
+    VIEW.x+=dx; VIEW.y+=dy; draw();
+  } else if(pointers.size===2){
+    const pts=[...pointers.values()];
+    const dist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);
+    const mid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
+    if(lastDist){
+      const factor=dist/lastDist;
+      zoomAt(mid.x,mid.y,factor);
+    }
+    lastDist=dist; lastMid=mid; moved=true;
+  }
+});
+wrap.addEventListener('pointerup',e=>{
+  const wasTap=!moved;
+  pointers.delete(e.pointerId); lastDist=0;
+  if(wasTap && pointers.size===0){ handleTap(e.clientX,e.clientY); }
+});
+wrap.addEventListener('pointercancel',e=>{ pointers.delete(e.pointerId); lastDist=0; });
+
+function zoomAt(cx,cy,factor){
+  const rect=mapCv.getBoundingClientRect();
+  const mx=cx-rect.left, my=cy-rect.top;
+  const ns=Math.max(0.6,Math.min(VIEW.scale*factor,9));
+  const real=ns/VIEW.scale;
+  VIEW.x = mx - (mx-VIEW.x)*real;
+  VIEW.y = my - (my-VIEW.y)*real;
+  VIEW.scale=ns; draw();
+}
+$('#zin').addEventListener('click',()=>zoomAt(W/2,H/2,1.4));
+$('#zout').addEventListener('click',()=>zoomAt(W/2,H/2,1/1.4));
+
+function handleTap(cx,cy){
+  const rect=mapCv.getBoundingClientRect();
+  const mx=cx-rect.left, my=cy-rect.top;
+  const list=PLACES.filter(p=>p.era.includes(curEra));
+  let best=null,bd=1e9;
+  for(const p of list){
+    const s=toScreen(project(p.lat,p.lng));
+    const d=Math.hypot(s.x-mx,s.y-my);
+    if(d<bd){bd=d;best=p;}
+  }
+  if(best && bd<26){ openPanel(best); }
+  else { closePanel(); }
+}
+
+// 구절 책이름 → 시대 판별
+const BOOK_OT=['창','출','레','민','신','수','삿','룻','삼상','삼하','왕상','왕하','대상','대하','스','느','에','욥','시','잠','전','아','사','렘','애','겔','단','호','욜','암','옵','욘','미','나','합','습','학','슥','말'];
+const BOOK_GOSPEL=['마','막','눅','요'];
+function eventEra(v){
+  const b=v.replace(/\s.*/,'').replace(/[0-9:~장,].*/,'');
+  if(BOOK_GOSPEL.includes(b)) return '예수님';   // 복음서는 예수님 시대로 우선
+  if(BOOK_OT.includes(b)) return '구약';
+  return '신약';                                  // 행~계
+}
+
+function openPanel(p){
+  $('#pName').textContent=p.nm;
+  $('#pNow').textContent=p.now?('지금: '+p.now):'';
+  $('#pMeaning').textContent=p.mean?('이름 뜻 · '+p.mean):'';
+  const ev=$('#pEvents'); ev.innerHTML='';
+  // 현재 탭에 맞는 사건만 (예수님 탭은 복음서, 구약 탭은 구약책, 신약 탭은 행~계)
+  let evs=(p.ev||[]).filter(e=>eventEra(e.v)===curEra);
+  // 해당 시대 사건이 없으면, 그 지명 전체 사건을 보여주되 시대 라벨을 붙임
+  const showAll = evs.length===0;
+  const target = showAll ? (p.ev||[]) : evs;
+  if(target.length){
+    for(const e of target){
+      const d=document.createElement('div'); d.className='evt';
+      const eraTag = showAll ? '<span style="font-size:11px;color:#b0a080;">['+eventEra(e.v)+'] </span>' : '';
+      d.innerHTML='<div class="t">'+eraTag+e.t+'</div><div class="v">'+e.v+'</div>';
+      ev.appendChild(d);
+    }
+  } else { ev.innerHTML='<div class="empty">기록된 사건이 아직 없어요.</div>'; }
+  $('#panel').classList.add('show');
+}
+function closePanel(){ $('#panel').classList.remove('show'); }
+$('#pClose').addEventListener('click',closePanel);
+
+// 탭
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active'); curEra=t.dataset.era; closePanel(); draw();
+  });
+});
+
+// 힌트바 자동 숨김
+setTimeout(()=>{ const h=$('#hintBar'); if(h) h.style.opacity='0'; },4200);
+
+window.addEventListener('resize',resize);
+resize();
+</script>
+</body>
+</html>
