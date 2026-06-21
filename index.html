@@ -83,10 +83,10 @@ function eventEra(v){
 }
 
 // 지도 초기화 — 가나안 중심
-const map=L.map('map',{ zoomControl:true, attributionControl:true }).setView([32.5,35.3], 7);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  maxZoom:12, minZoom:4,
-  attribution:'© OpenStreetMap'
+const map=L.map('map',{ zoomControl:true, attributionControl:true, minZoom:3, maxZoom:18 }).setView([31.8,35.2], 8);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
+  maxZoom:18, minZoom:3, subdomains:'abcd',
+  attribution:'© OpenStreetMap, © CARTO'
 }).addTo(map);
 
 let curEra='구약';
