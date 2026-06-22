@@ -64,9 +64,9 @@
   .leaflet-control-attribution{font-size:9px;}
 
   /* 여정 경유지 순번 핀 */
-  .rstop{display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-50%);cursor:pointer;}
-  .rstop .rnum{width:22px;height:22px;border-radius:50%;color:#fff;font-size:12px;font-weight:700;
-    display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.4);}
+  .rstop{display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-50%);cursor:pointer;padding:4px;}
+  .rstop .rnum{width:26px;height:26px;border-radius:50%;color:#fff;font-size:13px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.45);}
   .rstop .rnm{margin-top:2px;font-size:11px;font-weight:600;color:#2a2418;background:rgba(255,248,236,0.92);
     padding:1px 5px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.2);}
 
@@ -74,7 +74,8 @@
   .routelist{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);
     font-size:12px;color:#8a7a58;line-height:1.9;}
   .routelist .rlh{font-size:11px;font-weight:700;color:#b0a080;margin-bottom:4px;}
-  .rli{display:inline-block;padding:1px 7px;border-radius:11px;background:#f0e6d0;margin:2px 0;}
+  .rli{display:inline-block;padding:3px 9px;border-radius:11px;background:#f0e6d0;margin:2px 0;cursor:pointer;}
+  .rli:active{background:#e0d0a8;}
   .rli.cur{background:#2a2418;color:#fff8ec;font-weight:700;}
   .routelist .arr{color:#cbb98c;margin:0 2px;}
 
@@ -275,7 +276,9 @@ function setRoute(r,on){
 }
 
 // 여정 경유지 한 곳의 '한 일'을 패널에 표시
+let curRoute=null;
 function openStop(r,i){
+  curRoute=r;
   const s=r.stops[i];
   $('#pName').textContent=(i+1)+'. '+s[2];
   $('#pNow').textContent=r.name;
@@ -285,14 +288,19 @@ function openStop(r,i){
   d.style.borderLeftColor=r.color;
   d.innerHTML='<div class="t">'+s[3]+'</div><div class="v">'+s[4]+'</div>';
   ev.appendChild(d);
-  // 전체 여정 순서 미리보기
+  // 전체 여정 순서 — 칩을 누르면 그곳으로 이동
   const all=document.createElement('div'); all.className='routelist';
-  all.innerHTML='<div class="rlh">전체 경로</div>'+r.stops.map((x,j)=>
-    '<span class="rli'+(j===i?' cur':'')+'">'+(j+1)+' '+x[2]+'</span>').join('<span class="arr">→</span>');
+  all.innerHTML='<div class="rlh">전체 경로 (누르면 이동)</div>'+r.stops.map((x,j)=>
+    '<span class="rli'+(j===i?' cur':'')+'" data-i="'+j+'">'+(j+1)+' '+x[2]+'</span>').join('<span class="arr">→</span>');
   ev.appendChild(all);
   $('#panel').classList.add('show');
-  map.panTo([s[0],s[1]]);
+  map.setView([s[0],s[1]], Math.max(map.getZoom(),8));
 }
+// 전체 경로 칩 클릭 → 해당 경유지로 이동
+document.addEventListener('click',e=>{
+  const chip=e.target.closest('.rli[data-i]');
+  if(chip && curRoute){ openStop(curRoute, +chip.dataset.i); }
+});
 
 // 탭에 맞는 여정 버튼 갱신
 function renderRouteToggles(){
