@@ -27,9 +27,38 @@
   h1{font-family:'Gowun Batang',serif;font-size:21px;font-weight:700;color:var(--ink);}
   h1 .en{font-size:9px;letter-spacing:0.3em;color:#a89878;text-transform:uppercase;}
   #tabs{display:flex;gap:6px;margin-top:9px;}
-  .tab{flex:1;text-align:center;font-size:13px;font-weight:500;color:#9a8a68;
+  .tab{flex:1;text-align:center;font-size:12.5px;font-weight:500;color:#9a8a68;
     padding:8px 0;border-radius:9px;border:1px solid var(--line);background:#fdfaf2;cursor:pointer;}
   .tab.active{background:var(--ink);color:#fff8ec;border-color:var(--ink);font-weight:700;}
+
+  /* 시대 슬라이더 */
+  #era-slider{display:none;margin-top:10px;}
+  #era-slider.show{display:block;}
+  #eraLabel{font-size:14px;font-weight:700;color:#2a2418;margin-bottom:7px;text-align:center;}
+  #eraLabel .yr{font-size:12px;font-weight:500;color:#9a8a68;margin-left:6px;}
+  #eraRange{width:100%;-webkit-appearance:none;appearance:none;height:5px;border-radius:3px;
+    background:linear-gradient(90deg,#7b5fa0,#2980b9,#7f8c8d,#34495e,#16a085,#8e44ad);outline:none;}
+  #eraRange::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+    background:#fff;border:3px solid #2a2418;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.3);}
+  #eraTicks{display:flex;justify-content:space-between;margin-top:5px;}
+  #eraTicks span{font-size:9.5px;color:#a89878;flex:1;text-align:center;cursor:pointer;line-height:1.2;}
+  #eraTicks span.on{color:#2a2418;font-weight:700;}
+
+  /* 시대 영역 라벨 */
+  .rgLabel{background:rgba(255,248,236,0.85)!important;border:none!important;box-shadow:none!important;
+    font-size:12px!important;font-weight:700!important;color:#2a2418!important;padding:2px 7px!important;}
+  /* 수도 핀(별) */
+  .capPin{display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-50%);cursor:pointer;}
+  .capPin .capDot{width:24px;height:24px;border-radius:50%;background:#2a2418;color:#ffd24a;
+    display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.4);}
+  .capPin .capNm{margin-top:2px;font-size:11px;font-weight:700;color:#2a2418;background:rgba(255,248,236,0.92);
+    padding:1px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.2);}
+  /* 인물 핀 */
+  .perPin{display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-50%);cursor:pointer;padding:3px;}
+  .perPin .perDot{width:26px;height:26px;border-radius:50%;background:#d8943a;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.45);}
+  .perPin .perNm{margin-top:2px;font-size:11px;font-weight:600;color:#2a2418;background:rgba(255,248,236,0.92);
+    padding:1px 5px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.2);}
 
   /* 여정 토글 */
   #routes{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
@@ -117,6 +146,7 @@
     <div class="tab active" data-era="구약">구약</div>
     <div class="tab" data-era="신약">신약</div>
     <div class="tab" data-era="예수님">예수님</div>
+    <div class="tab" data-era="시대별">시대별</div>
   </div>
   <div id="searchbar">
     <input id="searchInput" type="text" placeholder="도시 검색 (예: 예루살렘, 로마)" autocomplete="off">
@@ -124,6 +154,11 @@
     <div id="searchResults"></div>
   </div>
   <div id="routes"></div>
+  <div id="era-slider">
+    <div id="eraLabel"></div>
+    <input id="eraRange" type="range" min="0" max="5" step="1" value="0">
+    <div id="eraTicks"></div>
+  </div>
 </header>
 <div id="map"></div>
 
@@ -236,6 +271,74 @@ const ROUTES = [
 ];
 // stops에서 path 자동 생성
 ROUTES.forEach(r=>{ r.path=r.stops.map(s=>[s[0],s[1]]); });
+
+// ===== 시대별 이스라엘 (느낌 영역 + 인물) =====
+// regions: 각 영역 {name, color, poly:[[lat,lng]...]}  — 정밀하지 않은 대략 영역
+// people: 그 시대 인물 [lat,lng,이름,한 일,구절]
+const ERAS = [
+  { key:"통일왕국", label:"통일왕국", year:"BC 1050~930", book:"사무엘·열왕기상",
+    desc:"사울·다윗·솔로몬이 다스린 하나의 이스라엘. 예루살렘이 수도, 성전이 세워짐.",
+    regions:[
+      { name:"통일 이스라엘", color:"#7b5fa0",
+        poly:[[33.3,35.2],[33.3,35.8],[31.2,35.6],[30.9,35.0],[31.4,34.5],[32.6,34.8]] }],
+    capitals:[[31.78,35.23,"예루살렘","통일왕국의 수도"]],
+    people:[
+      [31.78,35.23,"다윗","예루살렘을 정복해 수도로 삼고 나라를 세움","삼하 5장"],
+      [31.78,35.23,"솔로몬","성전을 건축하고 전성기를 이룸","왕상 6장"]] },
+  { key:"분열왕국", label:"분열", year:"BC 930~722", book:"열왕기상·하",
+    desc:"솔로몬 사후 나라가 둘로 갈라짐. 북이스라엘(수도 사마리아)과 남유다(수도 예루살렘).",
+    regions:[
+      { name:"북이스라엘", color:"#2980b9",
+        poly:[[33.3,35.2],[33.3,35.9],[32.0,35.7],[31.9,34.9],[32.5,34.8]] },
+      { name:"남유다", color:"#c0392b",
+        poly:[[31.9,34.9],[32.0,35.7],[31.2,35.6],[30.9,35.0],[31.4,34.6]] }],
+    capitals:[[32.28,35.19,"사마리아","북이스라엘 수도"],[31.78,35.23,"예루살렘","남유다 수도"]],
+    people:[
+      [32.83,35.04,"엘리야","북이스라엘에서 바알 우상과 싸운 선지자","왕상 17~19장"],
+      [32.28,35.19,"엘리사","엘리야를 이은 북왕국 선지자","왕하 2장"],
+      [31.50,35.10,"르호보암","분열 당시 남유다의 첫 왕","왕상 12장"]] },
+  { key:"북멸망", label:"북이스라엘 멸망", year:"BC 722", book:"열왕기하·이사야",
+    desc:"앗수르가 북이스라엘을 멸망시킴. 남유다만 남음. 이사야·미가가 활동.",
+    regions:[
+      { name:"앗수르에 점령된 북부", color:"#7f8c8d",
+        poly:[[33.3,35.2],[33.3,35.9],[32.0,35.7],[31.9,34.9],[32.5,34.8]] },
+      { name:"남유다(잔존)", color:"#c0392b",
+        poly:[[31.9,34.9],[32.0,35.7],[31.2,35.6],[30.9,35.0],[31.4,34.6]] }],
+    capitals:[[31.78,35.23,"예루살렘","남유다 수도"]],
+    people:[
+      [31.78,35.23,"이사야","'임마누엘'을 예언한 남유다 선지자","사 7장"],
+      [31.60,34.90,"미가","베들레헴에서 메시아 탄생을 예언","미 5:2"],
+      [32.40,35.30,"호세아","북이스라엘 멸망 직전의 선지자","호 1장"]] },
+  { key:"남멸망", label:"남유다 멸망", year:"BC 586", book:"열왕기하·예레미야",
+    desc:"바벨론이 남유다와 예루살렘 성전을 파괴. 백성이 포로로 끌려감(바벨론 포로).",
+    regions:[
+      { name:"바벨론에 멸망", color:"#34495e",
+        poly:[[33.3,35.2],[33.3,35.9],[31.2,35.6],[30.9,35.0],[31.4,34.5],[32.6,34.8]] }],
+    capitals:[[31.78,35.23,"예루살렘","성전 파괴, 함락"],[32.54,44.42,"바벨론","포로로 끌려간 곳"]],
+    people:[
+      [31.78,35.23,"예레미야","멸망을 경고하며 눈물 흘린 선지자","렘 1장"],
+      [32.54,44.42,"에스겔","바벨론 포로 중에 환상을 본 선지자","겔 1장"],
+      [32.54,44.42,"다니엘","바벨론 왕궁에서 신앙을 지킨 사람","단 1장"]] },
+  { key:"포로귀환", label:"포로 귀환", year:"BC 538~", book:"에스라·느헤미야",
+    desc:"페르시아가 바벨론을 무너뜨리자 유대인이 귀환. 성전과 성벽을 재건.",
+    regions:[
+      { name:"페르시아 속의 유다", color:"#16a085",
+        poly:[[32.2,35.0],[32.1,35.5],[31.4,35.5],[31.3,35.0],[31.7,34.7]] }],
+    capitals:[[31.78,35.23,"예루살렘","성전·성벽 재건"]],
+    people:[
+      [31.78,35.23,"에스라","율법을 가르치고 백성을 개혁","스 7장"],
+      [31.78,35.23,"느헤미야","무너진 성벽을 52일 만에 재건","느 6:15"],
+      [31.78,35.23,"학개·스가랴","성전 재건을 독려한 선지자","학 1장"]] },
+  { key:"헬라로마", label:"헬라·로마", year:"BC 332~AD 70", book:"중간기·복음서",
+    desc:"알렉산더(헬라) 지배 후 로마 속주가 됨. 예수님 시대의 무대. AD 70 예루살렘 멸망.",
+    regions:[
+      { name:"로마 속주 유대", color:"#8e44ad",
+        poly:[[33.3,35.2],[33.3,35.9],[31.2,35.6],[30.9,35.0],[31.4,34.5],[32.6,34.8]] }],
+    capitals:[[31.78,35.23,"예루살렘","로마 치하, AD70 멸망"],[32.50,34.89,"가이사랴","로마 총독부 소재지"]],
+    people:[
+      [31.70,35.20,"예수님","베들레헴에서 태어나심","눅 2장"],
+      [32.50,34.89,"빌라도","예수님을 재판한 로마 총독","마 27장"]] },
+];
 
 const $=s=>document.querySelector(s);
 
@@ -405,14 +508,100 @@ function openPanel(p){
 }
 $('#pClose').addEventListener('click',()=>$('#panel').classList.remove('show'));
 
+// ===== 시대별 이스라엘 =====
+let eraLayer=null, eraMarkers=[], curEraIdx=0;
+
+function clearEra(){
+  if(eraLayer){ map.removeLayer(eraLayer); eraLayer=null; }
+  eraMarkers.forEach(m=>map.removeLayer(m)); eraMarkers=[];
+}
+
+function drawEra(idx){
+  curEraIdx=idx;
+  clearEra();
+  const e=ERAS[idx];
+  const g=L.layerGroup();
+  // 영역 색칠
+  e.regions.forEach(rg=>{
+    L.polygon(rg.poly,{color:rg.color,weight:2,fillColor:rg.color,fillOpacity:0.28}).addTo(g)
+      .bindTooltip(rg.name,{permanent:false,direction:'center',className:'rgLabel'});
+  });
+  // 수도 핀
+  (e.capitals||[]).forEach(c=>{
+    const ic=L.divIcon({className:'',iconSize:[0,0],iconAnchor:[0,0],
+      html:'<div class="capPin"><div class="capDot">★</div><div class="capNm">'+c[2]+'</div></div>'});
+    L.marker([c[0],c[1]],{icon:ic,zIndexOffset:500}).addTo(g)
+      .on('click',()=>showEraInfo(e,'수도 · '+c[2],c[3],''));
+  });
+  // 인물 핀
+  e.people.forEach(p=>{
+    const ic=L.divIcon({className:'',iconSize:[0,0],iconAnchor:[0,0],
+      html:'<div class="perPin"><div class="perDot">'+p[2].slice(0,1)+'</div><div class="perNm">'+p[2]+'</div></div>'});
+    const mk=L.marker([p[0],p[1]],{icon:ic,zIndexOffset:1000}).addTo(g);
+    mk.on('click',()=>showEraInfo(e,p[2],p[3],p[4]));
+    eraMarkers.push(mk);
+  });
+  g.addTo(map); eraLayer=g;
+  // 라벨·슬라이더·눈금 갱신
+  $('#eraLabel').innerHTML=e.label+'<span class="yr">'+e.year+'</span>';
+  $('#eraRange').value=idx;
+  document.querySelectorAll('#eraTicks span').forEach((s,i)=>s.classList.toggle('on',i===idx));
+  // 이스라엘 중심으로 보기 (한 번만 맞춤)
+  map.setView([31.7,35.1], 7, {animate:true});
+}
+
+// 시대 정보를 패널에 표시
+function showEraInfo(e,title,desc,verse){
+  $('#pName').innerHTML='<span class="cityName">'+title+'</span>';
+  $('#pNow').textContent=e.label+' · '+e.year;
+  $('#pMeaning').textContent=e.desc;
+  const ev=$('#pEvents'); ev.innerHTML='';
+  const d=document.createElement('div'); d.className='evt';
+  d.innerHTML='<div class="t">'+desc+'</div>'+(verse?'<div class="v">'+verse+'</div>':'');
+  ev.appendChild(d);
+  $('#panel').classList.add('show');
+}
+
+function buildEraTicks(){
+  const t=$('#eraTicks'); t.innerHTML='';
+  ERAS.forEach((e,i)=>{
+    const s=document.createElement('span');
+    s.textContent=e.label;
+    s.addEventListener('click',()=>drawEra(i));
+    t.appendChild(s);
+  });
+}
+$('#eraRange').addEventListener('input',e=>drawEra(+e.target.value));
+
+// 시대별 모드 진입/이탈
+function enterEraMode(){
+  markers.forEach(m=>map.removeLayer(m)); markers=[];
+  ROUTES.forEach(r=>{ if(routeLayers[r.id]){ map.removeLayer(routeLayers[r.id]); delete routeLayers[r.id]; routeOn[r.id]=false; } });
+  $('#routes').style.display='none';
+  $('#searchbar').style.display='none';
+  $('#era-slider').classList.add('show');
+  drawEra(curEraIdx);
+}
+function exitEraMode(){
+  clearEra();
+  $('#era-slider').classList.remove('show');
+  $('#routes').style.display='';
+  $('#searchbar').style.display='';
+}
+
 document.querySelectorAll('.tab').forEach(t=>{
   t.addEventListener('click',()=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     t.classList.add('active'); curEra=t.dataset.era;
     $('#panel').classList.remove('show');
-    clearOtherEraRoutes();
-    renderMarkers();
-    renderRouteToggles();
+    if(curEra==='시대별'){
+      enterEraMode();
+    } else {
+      exitEraMode();
+      clearOtherEraRoutes();
+      renderMarkers();
+      renderRouteToggles();
+    }
   });
 });
 
@@ -453,6 +642,7 @@ document.addEventListener('click',e=>{
   if(!e.target.closest('#searchbar')) sRes.classList.remove('show');
 });
 
+buildEraTicks();
 renderMarkers();
 renderRouteToggles();
 </script>
