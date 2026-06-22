@@ -36,6 +36,8 @@
   #era-slider.show{display:block;}
   #eraLabel{font-size:14px;font-weight:700;color:#2a2418;margin-bottom:7px;text-align:center;}
   #eraLabel .yr{font-size:12px;font-weight:500;color:#9a8a68;margin-left:6px;}
+  #eraLabel .indep{font-size:11px;font-weight:700;color:#fff;background:#2e9e6a;padding:2px 8px;border-radius:11px;margin-left:4px;}
+  #eraLabel .occ{font-size:11px;font-weight:700;color:#fff;background:#7a7a7a;padding:2px 8px;border-radius:11px;margin-left:4px;}
   #eraRange{width:100%;-webkit-appearance:none;appearance:none;height:5px;border-radius:3px;
     background:linear-gradient(90deg,#7b5fa0,#2980b9,#7f8c8d,#34495e,#16a085,#8e44ad);outline:none;}
   #eraRange::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
@@ -273,24 +275,24 @@ const ROUTES = [
 ROUTES.forEach(r=>{ r.path=r.stops.map(s=>[s[0],s[1]]); });
 
 // ===== 시대별 이스라엘 (느낌 영역 + 인물) =====
-// regions: 각 영역 {name, color, poly:[[lat,lng]...]}  — 정밀하지 않은 대략 영역
+// region.state: "독립"(밝은색+실선) 또는 "점령"(어두운색+점선)
 // people: 그 시대 인물 [lat,lng,이름,한 일,구절]
 const ERAS = [
   { key:"통일왕국", label:"통일왕국", year:"BC 1050~930", book:"사무엘·열왕기상",
-    desc:"사울·다윗·솔로몬이 다스린 하나의 이스라엘. 예루살렘이 수도, 성전이 세워짐.",
+    desc:"사울·다윗·솔로몬이 다스린 하나의 독립 이스라엘. 예루살렘이 수도, 성전이 세워짐.",
     regions:[
-      { name:"통일 이스라엘", color:"#7b5fa0",
+      { name:"이스라엘 왕국", color:"#9b59b6", state:"독립",
         poly:[[33.3,35.2],[33.3,35.8],[31.2,35.6],[30.9,35.0],[31.4,34.5],[32.6,34.8]] }],
     capitals:[[31.78,35.23,"예루살렘","통일왕국의 수도"]],
     people:[
       [31.78,35.23,"다윗","예루살렘을 정복해 수도로 삼고 나라를 세움","삼하 5장"],
       [31.78,35.23,"솔로몬","성전을 건축하고 전성기를 이룸","왕상 6장"]] },
   { key:"분열왕국", label:"분열", year:"BC 930~722", book:"열왕기상·하",
-    desc:"솔로몬 사후 나라가 둘로 갈라짐. 북이스라엘(수도 사마리아)과 남유다(수도 예루살렘).",
+    desc:"솔로몬 사후 나라가 둘로 갈라짐. 북이스라엘(수도 사마리아)과 남유다(수도 예루살렘), 둘 다 독립국.",
     regions:[
-      { name:"북이스라엘", color:"#2980b9",
+      { name:"북이스라엘", color:"#3498db", state:"독립",
         poly:[[33.3,35.2],[33.3,35.9],[32.0,35.7],[31.9,34.9],[32.5,34.8]] },
-      { name:"남유다", color:"#c0392b",
+      { name:"남유다", color:"#e74c3c", state:"독립",
         poly:[[31.9,34.9],[32.0,35.7],[31.2,35.6],[30.9,35.0],[31.4,34.6]] }],
     capitals:[[32.28,35.19,"사마리아","북이스라엘 수도"],[31.78,35.23,"예루살렘","남유다 수도"]],
     people:[
@@ -298,11 +300,11 @@ const ERAS = [
       [32.28,35.19,"엘리사","엘리야를 이은 북왕국 선지자","왕하 2장"],
       [31.50,35.10,"르호보암","분열 당시 남유다의 첫 왕","왕상 12장"]] },
   { key:"북멸망", label:"북이스라엘 멸망", year:"BC 722", book:"열왕기하·이사야",
-    desc:"앗수르가 북이스라엘을 멸망시킴. 남유다만 남음. 이사야·미가가 활동.",
+    desc:"앗수르가 북이스라엘을 멸망시켜 점령. 남유다만 독립국으로 남음. 이사야·미가가 활동.",
     regions:[
-      { name:"앗수르에 점령된 북부", color:"#7f8c8d",
+      { name:"앗수르 점령지 (북)", color:"#7f8c8d", state:"점령",
         poly:[[33.3,35.2],[33.3,35.9],[32.0,35.7],[31.9,34.9],[32.5,34.8]] },
-      { name:"남유다(잔존)", color:"#c0392b",
+      { name:"남유다", color:"#e74c3c", state:"독립",
         poly:[[31.9,34.9],[32.0,35.7],[31.2,35.6],[30.9,35.0],[31.4,34.6]] }],
     capitals:[[31.78,35.23,"예루살렘","남유다 수도"]],
     people:[
@@ -310,9 +312,9 @@ const ERAS = [
       [31.60,34.90,"미가","베들레헴에서 메시아 탄생을 예언","미 5:2"],
       [32.40,35.30,"호세아","북이스라엘 멸망 직전의 선지자","호 1장"]] },
   { key:"남멸망", label:"남유다 멸망", year:"BC 586", book:"열왕기하·예레미야",
-    desc:"바벨론이 남유다와 예루살렘 성전을 파괴. 백성이 포로로 끌려감(바벨론 포로).",
+    desc:"바벨론이 남유다와 성전마저 파괴. 독립 국가가 사라지고 온 땅이 바벨론 지배 아래 들어감. 백성은 포로로 끌려감.",
     regions:[
-      { name:"바벨론에 멸망", color:"#34495e",
+      { name:"바벨론 지배 (독립국 없음)", color:"#2c3e50", state:"점령",
         poly:[[33.3,35.2],[33.3,35.9],[31.2,35.6],[30.9,35.0],[31.4,34.5],[32.6,34.8]] }],
     capitals:[[31.78,35.23,"예루살렘","성전 파괴, 함락"],[32.54,44.42,"바벨론","포로로 끌려간 곳"]],
     people:[
@@ -320,9 +322,9 @@ const ERAS = [
       [32.54,44.42,"에스겔","바벨론 포로 중에 환상을 본 선지자","겔 1장"],
       [32.54,44.42,"다니엘","바벨론 왕궁에서 신앙을 지킨 사람","단 1장"]] },
   { key:"포로귀환", label:"포로 귀환", year:"BC 538~", book:"에스라·느헤미야",
-    desc:"페르시아가 바벨론을 무너뜨리자 유대인이 귀환. 성전과 성벽을 재건.",
+    desc:"페르시아가 바벨론을 무너뜨려 유대인이 귀환. 성전·성벽을 재건하나, 독립국이 아니라 페르시아의 자치 속령이었음.",
     regions:[
-      { name:"페르시아 속의 유다", color:"#16a085",
+      { name:"페르시아 속령 유다 (독립 아님)", color:"#5d6d7e", state:"점령",
         poly:[[32.2,35.0],[32.1,35.5],[31.4,35.5],[31.3,35.0],[31.7,34.7]] }],
     capitals:[[31.78,35.23,"예루살렘","성전·성벽 재건"]],
     people:[
@@ -330,9 +332,9 @@ const ERAS = [
       [31.78,35.23,"느헤미야","무너진 성벽을 52일 만에 재건","느 6:15"],
       [31.78,35.23,"학개·스가랴","성전 재건을 독려한 선지자","학 1장"]] },
   { key:"헬라로마", label:"헬라·로마", year:"BC 332~AD 70", book:"중간기·복음서",
-    desc:"알렉산더(헬라) 지배 후 로마 속주가 됨. 예수님 시대의 무대. AD 70 예루살렘 멸망.",
+    desc:"알렉산더(헬라)에 이어 로마의 속주가 됨. 예수님 시대의 무대. 독립국이 아닌 로마 지배 아래였고, AD 70 예루살렘이 다시 멸망함.",
     regions:[
-      { name:"로마 속주 유대", color:"#8e44ad",
+      { name:"로마 속주 유대 (독립 아님)", color:"#6c5b7b", state:"점령",
         poly:[[33.3,35.2],[33.3,35.9],[31.2,35.6],[30.9,35.0],[31.4,34.5],[32.6,34.8]] }],
     capitals:[[31.78,35.23,"예루살렘","로마 치하, AD70 멸망"],[32.50,34.89,"가이사랴","로마 총독부 소재지"]],
     people:[
@@ -519,12 +521,20 @@ function clearEra(){
 function drawEra(idx){
   curEraIdx=idx;
   clearEra();
+  $('#panel').classList.remove('show');   // 단계 바꾸면 이전 패널 닫기
   const e=ERAS[idx];
   const g=L.layerGroup();
-  // 영역 색칠
+  // 영역 색칠 — 독립국 vs 점령 구분
   e.regions.forEach(rg=>{
-    L.polygon(rg.poly,{color:rg.color,weight:2,fillColor:rg.color,fillOpacity:0.28}).addTo(g)
-      .bindTooltip(rg.name,{permanent:false,direction:'center',className:'rgLabel'});
+    const occupied=(rg.state==='점령');
+    L.polygon(rg.poly,{
+      color: occupied ? '#555' : rg.color,
+      weight: occupied ? 1.5 : 2.5,
+      opacity: occupied ? 0.6 : 0.9,
+      dashArray: occupied ? '2,7' : null,     // 점령은 점선
+      fillColor: rg.color,
+      fillOpacity: occupied ? 0.16 : 0.35     // 점령은 흐릿하게
+    }).addTo(g).bindTooltip(rg.name,{permanent:false,direction:'center',className:'rgLabel'});
   });
   // 수도 핀
   (e.capitals||[]).forEach(c=>{
@@ -543,10 +553,11 @@ function drawEra(idx){
   });
   g.addTo(map); eraLayer=g;
   // 라벨·슬라이더·눈금 갱신
-  $('#eraLabel').innerHTML=e.label+'<span class="yr">'+e.year+'</span>';
+  const stateTag=e.regions.every(r=>r.state==='독립') ? '<span class="indep">독립국</span>'
+    : (e.regions.some(r=>r.state==='독립') ? '<span class="indep">일부 독립</span>' : '<span class="occ">독립국 아님</span>');
+  $('#eraLabel').innerHTML=e.label+'<span class="yr">'+e.year+'</span> '+stateTag;
   $('#eraRange').value=idx;
   document.querySelectorAll('#eraTicks span').forEach((s,i)=>s.classList.toggle('on',i===idx));
-  // 이스라엘 중심으로 보기 (한 번만 맞춤)
   map.setView([31.7,35.1], 7, {animate:true});
 }
 
