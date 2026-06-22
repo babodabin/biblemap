@@ -16,9 +16,9 @@
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   :root{ --ink:#3a3226; --panel:#fff8ec; --line:#e0d4b8; }
-  html,body{height:100%;font-family:'Noto Sans KR',sans-serif;}
-  body{display:flex;flex-direction:column;height:100%;padding-top:env(safe-area-inset-top);}
-  header{padding:10px 16px 8px;background:#fff8ec;border-bottom:1px solid var(--line);z-index:1000;}
+  html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:#fff8ec;}
+  body{display:flex;flex-direction:column;height:100%;}
+  header{padding:calc(10px + env(safe-area-inset-top)) 16px 8px;background:#fff8ec;border-bottom:1px solid var(--line);z-index:1000;}
   .titlerow{display:flex;align-items:baseline;gap:8px;}
   h1{font-family:'Gowun Batang',serif;font-size:21px;font-weight:700;color:var(--ink);}
   h1 .en{font-size:9px;letter-spacing:0.3em;color:#a89878;text-transform:uppercase;}
@@ -51,7 +51,15 @@
     max-height:60%;overflow-y:auto;padding:18px 20px calc(22px + env(safe-area-inset-bottom));}
   #panel.show{transform:translateY(0);}
   #panel .ph{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-right:38px;}
-  #pName{font-family:'Gowun Batang',serif;font-size:23px;font-weight:700;color:#2a2418;flex-shrink:0;}
+  #pName{font-family:'Gowun Batang',serif;font-size:23px;font-weight:700;color:#2a2418;flex-shrink:0;
+    display:flex;align-items:center;gap:9px;}
+  .cityBadge{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;
+    border-radius:50%;color:#fff;font-size:15px;font-weight:700;font-family:'Noto Sans KR',sans-serif;flex-shrink:0;}
+  .cityName{font-size:24px;}
+  .stopnav{display:flex;justify-content:space-between;gap:8px;margin-top:4px;}
+  .snav{flex:1;font-family:inherit;font-size:12.5px;font-weight:600;color:#5a4d36;background:#f0e6d0;
+    border:1px solid var(--line);border-radius:9px;padding:9px 8px;cursor:pointer;max-width:48%;}
+  .snav:active{background:#e0d0a8;}
   #pNow{font-size:12px;color:#9a8a68;text-align:right;line-height:1.4;}
   #pClose{position:absolute;top:14px;right:16px;width:30px;height:30px;border-radius:50%;
     border:none;background:#ece0c8;color:#6a5d44;font-size:17px;cursor:pointer;}
@@ -155,10 +163,10 @@ const ROUTES = [
       [31.53,35.10,"헤브론(재회)","야곱 일가가 기근을 피해 애굽으로 내려옴","창 46장"]] },
   { id:"jonah", era:"구약", name:"요나의 도망과 사명", color:"#1abc9c",
     stops:[
-      [32.05,34.75,"욥바","니느웨로 가라는 명을 어기고 반대편 배를 탐","욘 1:3"],
-      [34.50,18.00,"다시스 방향","폭풍 만나 바다에 던져짐(지중해 서쪽 끝으로 도망)","욘 1:4~15"],
-      [34.60,30.00,"큰 물고기","사흘 밤낮 물고기 뱃속에서 기도","욘 1:17~2장"],
-      [36.36,43.15,"니느웨","회개를 전하니 온 성이 돌이킴","욘 3장"]] },
+      [32.05,34.75,"욥바","니느웨로 가라는 명을 어기고 다시스행 배를 탐","욘 1:3"],
+      [34.50,18.00,"다시스 방향","다시스(스페인 남부)로 가던 중 폭풍 만나 바다에 던져짐 — 도착 못 함, 방향만 표시","욘 1:4~15"],
+      [32.00,34.70,"욥바 해안(토함)","큰 물고기가 사흘 후 그를 육지에 토해냄","욘 1:17~2:10"],
+      [36.36,43.15,"니느웨","다시 명받아 가서 회개를 전하니 온 성이 돌이킴","욘 3장"]] },
   { id:"david", era:"구약", name:"다윗의 도피 (사울을 피해)", color:"#884ea0",
     stops:[
       [31.70,35.20,"베들레헴","목동 소년 다윗이 기름부음 받음","삼상 16장"],
@@ -207,6 +215,20 @@ const ROUTES = [
       [32.50,34.89,"가이사랴","가이사에게 상소, 죄수로 출항","행 25:11~12"],
       [35.90,14.40,"멜리데(몰타)","배가 파선, 독사에 물려도 무사","행 27~28장"],
       [41.90,12.50,"로마","연금 중에도 담대히 복음 전함","행 28:16~31"]] },
+  { id:"nativity", era:"예수님", name:"예수님 탄생 여정", color:"#c0392b",
+    stops:[
+      [32.70,35.30,"나사렛","천사가 마리아에게 수태고지","눅 1:26~38"],
+      [31.70,35.20,"베들레헴","호적하러 내려가 마구간에서 태어나심","눅 2:1~7"],
+      [31.78,35.23,"예루살렘","성전에서 시므온과 안나가 아기를 알아봄","눅 2:22~38"],
+      [30.00,31.20,"애굽","헤롯의 영아 살해를 피해 피난","마 2:13~15"],
+      [32.70,35.30,"나사렛(귀환)","헤롯이 죽은 뒤 돌아와 정착","마 2:19~23"]] },
+  { id:"elijah", era:"구약", name:"엘리야의 도주", color:"#d68910",
+    stops:[
+      [32.83,35.04,"갈멜산","바알 선지자 450명과 대결해 승리","왕상 18장"],
+      [32.56,35.30,"이스르엘","이세벨이 죽이려 하자 도망침","왕상 19:1~3"],
+      [31.25,34.79,"브엘세바","종을 두고 홀로 광야로 들어감","왕상 19:3~4"],
+      [28.54,33.97,"호렙산(시내산)","'세미한 소리'로 하나님을 만남","왕상 19:8~18"],
+      [33.51,36.29,"다메섹 방향","엘리사를 후계자로 부르러 돌아감","왕상 19:15~21"]] },
 ];
 // stops에서 path 자동 생성
 ROUTES.forEach(r=>{ r.path=r.stops.map(s=>[s[0],s[1]]); });
@@ -280,22 +302,35 @@ let curRoute=null;
 function openStop(r,i){
   curRoute=r;
   const s=r.stops[i];
-  $('#pName').textContent=(i+1)+'. '+s[2];
-  $('#pNow').textContent=r.name;
+  // 도시명을 색 배지로 크게 강조
+  $('#pName').innerHTML='<span class="cityBadge" style="background:'+r.color+'">'+(i+1)+'</span>'
+    +'<span class="cityName">'+s[2]+'</span>';
+  $('#pNow').textContent=r.name+'  ·  '+(i+1)+'/'+r.stops.length;
   $('#pMeaning').textContent='';
   const ev=$('#pEvents'); ev.innerHTML='';
   const d=document.createElement('div'); d.className='evt';
   d.style.borderLeftColor=r.color;
   d.innerHTML='<div class="t">'+s[3]+'</div><div class="v">'+s[4]+'</div>';
   ev.appendChild(d);
+  // 이전/다음 이동 버튼
+  const nav=document.createElement('div'); nav.className='stopnav';
+  nav.innerHTML=
+    (i>0?'<button class="snav" data-go="'+(i-1)+'">← '+r.stops[i-1][2]+'</button>':'<span></span>')
+   +(i<r.stops.length-1?'<button class="snav" data-go="'+(i+1)+'">'+r.stops[i+1][2]+' →</button>':'<span></span>');
+  ev.appendChild(nav);
   // 전체 여정 순서 — 칩을 누르면 그곳으로 이동
   const all=document.createElement('div'); all.className='routelist';
   all.innerHTML='<div class="rlh">전체 경로 (누르면 이동)</div>'+r.stops.map((x,j)=>
-    '<span class="rli'+(j===i?' cur':'')+'" data-i="'+j+'">'+(j+1)+' '+x[2]+'</span>').join('<span class="arr">→</span>');
+    '<span class="rli'+(j===i?' cur':'')+'" data-i="'+j+'" style="'+(j===i?'background:'+r.color+';color:#fff':'')+'">'+(j+1)+' '+x[2]+'</span>').join('<span class="arr">→</span>');
   ev.appendChild(all);
   $('#panel').classList.add('show');
   map.setView([s[0],s[1]], Math.max(map.getZoom(),8));
 }
+// 이전/다음 버튼
+document.addEventListener('click',e=>{
+  const nb=e.target.closest('.snav[data-go]');
+  if(nb && curRoute){ openStop(curRoute, +nb.dataset.go); }
+});
 // 전체 경로 칩 클릭 → 해당 경유지로 이동
 document.addEventListener('click',e=>{
   const chip=e.target.closest('.rli[data-i]');
@@ -310,10 +345,21 @@ function renderRouteToggles(){
     b.className='rt'+(routeOn[r.id]?' on':'');
     b.innerHTML='<span class="sw" style="background:'+r.color+'"></span>'+r.name;
     b.addEventListener('click',()=>{
-      const nowOn=!routeOn[r.id];
-      setRoute(r,nowOn);
-      b.classList.toggle('on',nowOn);
-      if(nowOn) map.fitBounds(L.polyline(r.path).getBounds(),{padding:[40,40]});
+      if(!routeOn[r.id]){
+        // 처음 누름 → 켜고 전체 경로 보기
+        setRoute(r,true);
+        b.classList.add('on');
+        map.fitBounds(L.polyline(r.path).getBounds(),{padding:[40,40]});
+        $('#panel').classList.remove('show');
+      } else if(!(curRoute===r && $('#panel').classList.contains('show'))){
+        // 켜진 상태에서 다시 누름 → 1번 도시 상세 열기
+        openStop(r,0);
+      } else {
+        // 1번이 열린 상태에서 또 누름 → 끄기
+        setRoute(r,false);
+        b.classList.remove('on');
+        $('#panel').classList.remove('show');
+      }
     });
     wrap.appendChild(b);
   });
