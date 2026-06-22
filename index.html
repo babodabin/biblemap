@@ -49,6 +49,9 @@
   /* 시대 영역 라벨 */
   .rgLabel{background:rgba(255,248,236,0.85)!important;border:none!important;box-shadow:none!important;
     font-size:12px!important;font-weight:700!important;color:#2a2418!important;padding:2px 7px!important;}
+  /* 주변국 라벨(회색) */
+  .nbLabel{background:rgba(120,120,120,0.12)!important;border:none!important;box-shadow:none!important;
+    font-size:11px!important;font-weight:600!important;color:#6a6a6a!important;padding:1px 6px!important;}
   /* 수도 핀(별) */
   .capPin{display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-50%);cursor:pointer;}
   .capPin .capDot{width:24px;height:24px;border-radius:50%;background:#2a2418;color:#ffd24a;
@@ -283,6 +286,14 @@ const ERAS = [
     regions:[
       { name:"이스라엘 왕국", color:"#9b59b6", state:"독립",
         poly:[[33.3,35.2],[33.3,35.8],[31.2,35.6],[30.9,35.0],[31.4,34.5],[32.6,34.8]] }],
+    neighbors:[
+      { name:"블레셋", poly:[[31.7,34.3],[31.7,34.7],[31.3,34.6],[31.3,34.3]] },
+      { name:"아람", poly:[[34.0,36.0],[34.0,37.2],[33.0,37.0],[33.1,36.0]] },
+      { name:"베니게", poly:[[34.5,35.3],[34.5,35.7],[33.3,35.4],[33.5,35.2]] },
+      { name:"암몬", poly:[[32.2,35.8],[32.2,36.2],[31.7,36.1],[31.8,35.8]] },
+      { name:"모압", poly:[[31.6,35.6],[31.6,36.0],[31.0,35.9],[31.1,35.6]] },
+      { name:"에돔", poly:[[30.9,35.2],[30.9,35.7],[30.1,35.5],[30.3,35.1]] },
+      { name:"애굽", poly:[[31.3,30.5],[31.3,32.2],[29.5,32.0],[29.8,30.3]] } ],
     capitals:[[31.78,35.23,"예루살렘","통일왕국의 수도"]],
     people:[
       [31.78,35.23,"다윗","예루살렘을 정복해 수도로 삼고 나라를 세움","삼하 5장"],
@@ -295,6 +306,11 @@ const ERAS = [
       { name:"남유다", color:"#e74c3c", state:"독립",
         poly:[[31.9,34.9],[32.0,35.7],[31.2,35.6],[30.9,35.0],[31.4,34.6]] }],
     capitals:[[32.28,35.19,"사마리아","북이스라엘 수도"],[31.78,35.23,"예루살렘","남유다 수도"]],
+    neighbors:[
+      { name:"아람 → 앗수르 부상", poly:[[35.5,36.5],[35.5,40.0],[33.0,39.5],[33.2,36.3]] },
+      { name:"블레셋", poly:[[31.7,34.3],[31.7,34.7],[31.3,34.6],[31.3,34.3]] },
+      { name:"모압", poly:[[31.6,35.6],[31.6,36.0],[31.0,35.9],[31.1,35.6]] },
+      { name:"애굽", poly:[[31.3,30.5],[31.3,32.2],[29.5,32.0],[29.8,30.3]] } ],
     people:[
       [32.83,35.04,"엘리야","북이스라엘에서 바알 우상과 싸운 선지자","왕상 17~19장"],
       [32.28,35.19,"엘리사","엘리야를 이은 북왕국 선지자","왕하 2장"],
@@ -307,6 +323,9 @@ const ERAS = [
       { name:"남유다", color:"#e74c3c", state:"독립",
         poly:[[31.9,34.9],[32.0,35.7],[31.2,35.6],[30.9,35.0],[31.4,34.6]] }],
     capitals:[[31.78,35.23,"예루살렘","남유다 수도"]],
+    neighbors:[
+      { name:"앗수르 제국", poly:[[37.5,36.0],[37.5,44.5],[33.0,45.5],[31.5,42.0],[32.5,36.0]] },
+      { name:"애굽", poly:[[31.3,30.5],[31.3,32.2],[29.5,32.0],[29.8,30.3]] } ],
     people:[
       [31.78,35.23,"이사야","'임마누엘'을 예언한 남유다 선지자","사 7장"],
       [31.60,34.90,"미가","베들레헴에서 메시아 탄생을 예언","미 5:2"],
@@ -317,6 +336,9 @@ const ERAS = [
       { name:"바벨론 지배 (독립국 없음)", color:"#2c3e50", state:"점령",
         poly:[[33.3,35.2],[33.3,35.9],[31.2,35.6],[30.9,35.0],[31.4,34.5],[32.6,34.8]] }],
     capitals:[[31.78,35.23,"예루살렘","성전 파괴, 함락"],[32.54,44.42,"바벨론","포로로 끌려간 곳"]],
+    neighbors:[
+      { name:"바벨론 제국", poly:[[37.0,36.0],[37.0,46.0],[30.0,48.0],[29.5,43.0],[31.5,35.8]] },
+      { name:"애굽", poly:[[31.3,30.5],[31.3,32.2],[29.5,32.0],[29.8,30.3]] } ],
     people:[
       [31.78,35.23,"예레미야","멸망을 경고하며 눈물 흘린 선지자","렘 1장"],
       [32.54,44.42,"에스겔","바벨론 포로 중에 환상을 본 선지자","겔 1장"],
@@ -327,6 +349,8 @@ const ERAS = [
       { name:"페르시아 속령 유다 (독립 아님)", color:"#5d6d7e", state:"점령",
         poly:[[32.2,35.0],[32.1,35.5],[31.4,35.5],[31.3,35.0],[31.7,34.7]] }],
     capitals:[[31.78,35.23,"예루살렘","성전·성벽 재건"]],
+    neighbors:[
+      { name:"페르시아 제국", poly:[[40.0,34.0],[40.0,48.0],[28.0,50.0],[27.0,40.0],[30.0,33.5]] } ],
     people:[
       [31.78,35.23,"에스라","율법을 가르치고 백성을 개혁","스 7장"],
       [31.78,35.23,"느헤미야","무너진 성벽을 52일 만에 재건","느 6:15"],
@@ -337,6 +361,8 @@ const ERAS = [
       { name:"로마 속주 유대 (독립 아님)", color:"#6c5b7b", state:"점령",
         poly:[[33.3,35.2],[33.3,35.9],[31.2,35.6],[30.9,35.0],[31.4,34.5],[32.6,34.8]] }],
     capitals:[[31.78,35.23,"예루살렘","로마 치하, AD70 멸망"],[32.50,34.89,"가이사랴","로마 총독부 소재지"]],
+    neighbors:[
+      { name:"헬라 → 로마 제국", poly:[[40.0,33.0],[40.0,45.0],[28.0,46.0],[27.0,32.0],[31.0,30.0]] } ],
     people:[
       [31.70,35.20,"예수님","베들레헴에서 태어나심","눅 2장"],
       [32.50,34.89,"빌라도","예수님을 재판한 로마 총독","마 27장"]] },
@@ -524,6 +550,12 @@ function drawEra(idx){
   $('#panel').classList.remove('show');   // 단계 바꾸면 이전 패널 닫기
   const e=ERAS[idx];
   const g=L.layerGroup();
+  // 주변국(회색)을 먼저 — 이스라엘 영역 뒤에 깔리게
+  (e.neighbors||[]).forEach(nb=>{
+    L.polygon(nb.poly,{color:'#8a8a8a',weight:1,opacity:0.5,
+      fillColor:'#9a9a9a',fillOpacity:0.18}).addTo(g)
+      .bindTooltip(nb.name,{permanent:true,direction:'center',className:'nbLabel'});
+  });
   // 영역 색칠 — 독립국 vs 점령 구분
   e.regions.forEach(rg=>{
     const occupied=(rg.state==='점령');
@@ -558,7 +590,9 @@ function drawEra(idx){
   $('#eraLabel').innerHTML=e.label+'<span class="yr">'+e.year+'</span> '+stateTag;
   $('#eraRange').value=idx;
   document.querySelectorAll('#eraTicks span').forEach((s,i)=>s.classList.toggle('on',i===idx));
-  map.setView([31.7,35.1], 7, {animate:true});
+  // 주변국이 클수록 더 넓게 보기
+  const bigEmpire=['북멸망','남멸망','포로귀환','헬라로마'].includes(e.key);
+  map.setView([32.0,37.0], bigEmpire?6:7, {animate:true});
 }
 
 // 시대 정보를 패널에 표시
