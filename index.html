@@ -20,6 +20,14 @@
     padding:8px 0;border-radius:9px;border:1px solid var(--line);background:#fdfaf2;cursor:pointer;}
   .tab.active{background:var(--ink);color:#fff8ec;border-color:var(--ink);font-weight:700;}
 
+  /* 여정 토글 */
+  #routes{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+  #routes:empty{display:none;}
+  .rt{font-size:11.5px;font-weight:500;color:#7a6c50;padding:5px 10px;border-radius:20px;
+    border:1px solid var(--line);background:#fdfaf2;cursor:pointer;display:flex;align-items:center;gap:5px;}
+  .rt .sw{width:14px;height:3px;border-radius:2px;display:inline-block;}
+  .rt.on{background:#2a2418;color:#fff8ec;border-color:#2a2418;}
+
   #map{flex:1;width:100%;background:#aecbd6;z-index:1;}
 
   /* 커스텀 핀 */
@@ -35,9 +43,9 @@
     transform:translateY(110%);transition:transform .32s cubic-bezier(.3,.8,.4,1);
     max-height:60%;overflow-y:auto;padding:18px 20px calc(22px + env(safe-area-inset-bottom));}
   #panel.show{transform:translateY(0);}
-  #panel .ph{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
-  #pName{font-family:'Gowun Batang',serif;font-size:23px;font-weight:700;color:#2a2418;}
-  #pNow{font-size:12px;color:#9a8a68;white-space:nowrap;}
+  #panel .ph{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-right:38px;}
+  #pName{font-family:'Gowun Batang',serif;font-size:23px;font-weight:700;color:#2a2418;flex-shrink:0;}
+  #pNow{font-size:12px;color:#9a8a68;text-align:right;line-height:1.4;}
   #pClose{position:absolute;top:14px;right:16px;width:30px;height:30px;border-radius:50%;
     border:none;background:#ece0c8;color:#6a5d44;font-size:17px;cursor:pointer;}
   #pMeaning{font-size:13px;color:#8a7a58;margin-top:3px;font-style:italic;}
@@ -47,6 +55,39 @@
   .evt .v{font-size:12px;color:#a08a60;margin-top:2px;}
   .empty{font-size:13px;color:#a89878;margin-top:12px;}
   .leaflet-control-attribution{font-size:9px;}
+
+  /* 여정 경유지 순번 핀 */
+  .rstop{display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-50%);cursor:pointer;}
+  .rstop .rnum{width:22px;height:22px;border-radius:50%;color:#fff;font-size:12px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.4);}
+  .rstop .rnm{margin-top:2px;font-size:11px;font-weight:600;color:#2a2418;background:rgba(255,248,236,0.92);
+    padding:1px 5px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.2);}
+
+  /* 패널 안 전체 경로 미리보기 */
+  .routelist{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);
+    font-size:12px;color:#8a7a58;line-height:1.9;}
+  .routelist .rlh{font-size:11px;font-weight:700;color:#b0a080;margin-bottom:4px;}
+  .rli{display:inline-block;padding:1px 7px;border-radius:11px;background:#f0e6d0;margin:2px 0;}
+  .rli.cur{background:#2a2418;color:#fff8ec;font-weight:700;}
+  .routelist .arr{color:#cbb98c;margin:0 2px;}
+
+  /* 검색창 */
+  #searchbar{position:relative;margin-top:8px;}
+  #searchInput{width:100%;padding:8px 32px 8px 12px;font-size:13px;font-family:inherit;
+    border:1px solid var(--line);border-radius:9px;background:#fdfaf2;color:var(--ink);outline:none;}
+  #searchInput:focus{border-color:#b8a060;background:#fff;}
+  #searchClear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:20px;height:20px;
+    border:none;background:#ece0c8;color:#6a5d44;border-radius:50%;font-size:13px;cursor:pointer;display:none;}
+  #searchResults{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:1200;
+    background:#fff;border:1px solid var(--line);border-radius:9px;box-shadow:0 4px 16px rgba(0,0,0,0.15);
+    max-height:240px;overflow-y:auto;display:none;}
+  #searchResults.show{display:block;}
+  .sr{padding:9px 13px;font-size:13px;color:#3a3226;cursor:pointer;border-bottom:1px solid #f2ead8;}
+  .sr:last-child{border-bottom:none;}
+  .sr:active,.sr:hover{background:#f7f0df;}
+  .sr .srn{font-weight:600;}
+  .sr .srnow{font-size:11px;color:#a89878;margin-left:6px;}
+  .sr.none{color:#a89878;cursor:default;}
 </style>
 </head>
 <body>
@@ -57,6 +98,12 @@
     <div class="tab" data-era="신약">신약</div>
     <div class="tab" data-era="예수님">예수님</div>
   </div>
+  <div id="searchbar">
+    <input id="searchInput" type="text" placeholder="도시 검색 (예: 예루살렘, 로마)" autocomplete="off">
+    <button id="searchClear">×</button>
+    <div id="searchResults"></div>
+  </div>
+  <div id="routes"></div>
 </header>
 <div id="map"></div>
 
@@ -70,6 +117,66 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const PLACES = [{"nm":"예루살렘","lat":31.78,"lng":35.23,"now":"이스라엘 예루살렘","era":["구약","신약","예수님"],"mean":"평화의 터","ev":[{"t":"다윗이 수도로 삼고 언약궤를 옮김","v":"삼하 5~6장"},{"t":"솔로몬이 성전을 건축함","v":"왕상 6장"},{"t":"예수님이 십자가에 못 박히고 부활하심","v":"마 27~28장"},{"t":"오순절 성령 강림, 교회의 시작","v":"행 2장"}]},{"nm":"베들레헴","lat":31.7,"lng":35.2,"now":"팔레스타인 베들레헴","era":["구약","예수님"],"mean":"떡집","ev":[{"t":"다윗이 태어나고 사무엘에게 기름부음 받음","v":"삼상 16장"},{"t":"룻과 보아스의 이야기 무대","v":"룻 1~4장"},{"t":"예수님이 태어나심","v":"눅 2:1~7"}]},{"nm":"나사렛","lat":32.7,"lng":35.3,"now":"이스라엘 나사렛","era":["예수님","신약"],"mean":"","ev":[{"t":"천사가 마리아에게 수태고지","v":"눅 1:26~38"},{"t":"예수님이 자라나신 고향","v":"눅 2:39~40"}]},{"nm":"갈릴리 바다","lat":32.83,"lng":35.59,"now":"갈릴리 호수(긴네렛)","era":["예수님","신약"],"mean":"구약의 긴네렛","ev":[{"t":"어부 베드로·안드레·야고보·요한을 부르심","v":"마 4:18~22"},{"t":"풍랑을 잠잠케 하시고 물 위를 걸으심","v":"마 8,14장"}]},{"nm":"가버나움","lat":32.88,"lng":35.57,"now":"이스라엘 가버나움 유적","era":["예수님"],"mean":"나훔의 마을","ev":[{"t":"예수님 갈릴리 사역의 본거지","v":"마 4:13"},{"t":"중풍병자·백부장의 하인을 고치심","v":"막 2장, 마 8장"}]},{"nm":"가나","lat":32.75,"lng":35.34,"now":"이스라엘 카프르 칸나","era":["예수님"],"mean":"","ev":[{"t":"물로 포도주를 만드신 첫 이적","v":"요 2:1~11"}]},{"nm":"여리고","lat":31.87,"lng":35.44,"now":"팔레스타인 여리고","era":["구약","예수님"],"mean":"달의 도시","ev":[{"t":"여호수아 때 성벽이 무너짐","v":"수 6장"},{"t":"삭개오를 만나고 소경을 고치심","v":"눅 19장, 막 10장"}]},{"nm":"요단강","lat":32,"lng":35.55,"now":"요르단강","era":["구약","예수님","신약"],"mean":"내려가는 강","ev":[{"t":"이스라엘이 마른 땅으로 건넘","v":"수 3장"},{"t":"예수님이 세례 요한에게 세례 받으심","v":"마 3:13~17"}]},{"nm":"사해","lat":31.5,"lng":35.45,"now":"사해(死海)","era":["구약"],"mean":"염해","ev":[{"t":"소돔과 고모라가 있던 지역으로 추정","v":"창 19장"}]},{"nm":"시내산","lat":28.54,"lng":33.97,"now":"이집트 시나이반도","era":["구약"],"mean":"호렙산","ev":[{"t":"모세가 십계명을 받음","v":"출 19~20장"},{"t":"엘리야가 하나님을 만남","v":"왕상 19장"}]},{"nm":"애굽","lat":30,"lng":31.2,"now":"이집트","era":["구약"],"mean":"미스라임","ev":[{"t":"요셉이 총리가 되고 야곱 일가가 이주","v":"창 41~47장"},{"t":"모세의 열 재앙과 출애굽","v":"출 7~12장"}]},{"nm":"다메섹","lat":33.51,"lng":36.29,"now":"시리아 다마스쿠스","era":["구약","신약"],"mean":"","ev":[{"t":"아람 왕국의 수도","v":"왕상 11장"},{"t":"사울(바울)이 빛을 보고 회심함","v":"행 9장"}]},{"nm":"가이사랴","lat":32.5,"lng":34.89,"now":"이스라엘 카이사리아","era":["신약"],"mean":"","ev":[{"t":"백부장 고넬료가 세례 받음(이방 선교)","v":"행 10장"},{"t":"바울이 갇혀 변론함","v":"행 23~26장"}]},{"nm":"욥바","lat":32.05,"lng":34.75,"now":"이스라엘 야파(텔아비브)","era":["구약","신약"],"mean":"아름다움","ev":[{"t":"요나가 다시스로 도망치려 배를 탐","v":"욘 1장"},{"t":"베드로가 환상을 보고 도르가를 살림","v":"행 9~10장"}]},{"nm":"브엘세바","lat":31.25,"lng":34.79,"now":"이스라엘 브엘세바","era":["구약"],"mean":"맹세의 우물","ev":[{"t":"아브라함·이삭·야곱이 머문 남방의 거점","v":"창 21,26장"}]},{"nm":"헤브론","lat":31.53,"lng":35.1,"now":"팔레스타인 헤브론","era":["구약"],"mean":"동맹","ev":[{"t":"아브라함이 막벨라 굴을 매장지로 삼음","v":"창 23장"},{"t":"다윗이 처음 왕이 된 곳","v":"삼하 2장"}]},{"nm":"벧엘","lat":31.93,"lng":35.22,"now":"팔레스타인 베이틴","era":["구약"],"mean":"하나님의 집","ev":[{"t":"야곱이 사다리 꿈을 꿈","v":"창 28장"}]},{"nm":"세겜","lat":32.21,"lng":35.28,"now":"팔레스타인 나블루스","era":["구약","예수님"],"mean":"수가 성","ev":[{"t":"아브라함이 가나안서 첫 제단을 쌓음","v":"창 12장"},{"t":"예수님이 사마리아 여인과 대화(야곱의 우물)","v":"요 4장"}]},{"nm":"사마리아","lat":32.28,"lng":35.19,"now":"팔레스타인 세바스티아","era":["구약","신약"],"mean":"","ev":[{"t":"북이스라엘 왕국의 수도","v":"왕상 16장"},{"t":"빌립이 복음을 전함","v":"행 8장"}]},{"nm":"두로","lat":33.27,"lng":35.2,"now":"레바논 티레","era":["구약","예수님"],"mean":"바위","ev":[{"t":"성전 건축 목재를 보낸 항구 도시","v":"왕상 5장"},{"t":"예수님이 가나안 여인의 딸을 고치심","v":"마 15장"}]},{"nm":"시돈","lat":33.56,"lng":35.37,"now":"레바논 사이다","era":["구약","예수님"],"mean":"","ev":[{"t":"엘리야가 사르밧 과부를 만남","v":"왕상 17장"}]},{"nm":"바벨론","lat":32.54,"lng":44.42,"now":"이라크 힐라 부근","era":["구약"],"mean":"혼란","ev":[{"t":"바벨탑을 쌓던 곳","v":"창 11장"},{"t":"유다가 포로로 끌려간 제국의 수도","v":"왕하 25장, 단 1장"}]},{"nm":"우르","lat":30.96,"lng":46.1,"now":"이라크 남부","era":["구약"],"mean":"갈대아 우르","ev":[{"t":"아브라함이 부름받아 떠난 고향","v":"창 11~12장"}]},{"nm":"하란","lat":36.86,"lng":39.03,"now":"터키 하란","era":["구약"],"mean":"","ev":[{"t":"아브라함이 가나안 가기 전 머묾","v":"창 11장"},{"t":"야곱이 외삼촌 라반에게 가서 일함","v":"창 29장"}]},{"nm":"니느웨","lat":36.36,"lng":43.15,"now":"이라크 모술","era":["구약"],"mean":"","ev":[{"t":"요나가 회개를 전한 앗수르의 수도","v":"욘 3장"}]},{"nm":"다소","lat":36.92,"lng":34.89,"now":"터키 타르수스","era":["신약"],"mean":"","ev":[{"t":"사도 바울의 고향","v":"행 9:11, 21:39"}]},{"nm":"안디옥","lat":36.2,"lng":36.16,"now":"터키 안타키아","era":["신약"],"mean":"","ev":[{"t":"처음으로 그리스도인이라 불림","v":"행 11:26"},{"t":"바울의 전도여행 출발지","v":"행 13장"}]},{"nm":"에베소","lat":37.94,"lng":27.34,"now":"터키 셀추크","era":["신약"],"mean":"","ev":[{"t":"바울이 오래 머물며 사역","v":"행 19장"},{"t":"에베소서를 받은 교회","v":"엡 1장"}]},{"nm":"아라랏산","lat":39.7,"lng":44.3,"now":"터키 아라라트산","era":["구약"],"mean":"","ev":[{"t":"노아의 방주가 머문 산","v":"창 8:4"}]},{"nm":"드로아","lat":39.75,"lng":26.16,"now":"터키 트로이 부근","era":["신약"],"mean":"","ev":[{"t":"바울이 마게도냐(유럽)로 건너오라는 환상을 봄","v":"행 16:8~10"}]},{"nm":"빌립보","lat":41.01,"lng":24.29,"now":"그리스 필리피","era":["신약"],"mean":"","ev":[{"t":"유럽 첫 교회. 루디아가 회심함","v":"행 16:11~15"},{"t":"바울·실라가 옥에 갇혔다 지진으로 풀려나 간수가 회심","v":"행 16:16~34"}]},{"nm":"데살로니가","lat":40.64,"lng":22.94,"now":"그리스 테살로니키","era":["신약"],"mean":"","ev":[{"t":"회당에서 전도, 유대인의 박해로 떠남","v":"행 17:1~10"},{"t":"데살로니가전·후서를 받은 교회","v":"살전 1장"}]},{"nm":"베뢰아","lat":40.52,"lng":22.2,"now":"그리스 베리아","era":["신약"],"mean":"","ev":[{"t":"말씀을 날마다 상고한 신실한 사람들","v":"행 17:10~13"}]},{"nm":"아덴","lat":37.98,"lng":23.73,"now":"그리스 아테네","era":["신약"],"mean":"","ev":[{"t":"아레오바고에서 \"알지 못하는 신\"을 전함","v":"행 17:16~34"}]},{"nm":"고린도","lat":37.94,"lng":22.93,"now":"그리스 코린토스","era":["신약"],"mean":"","ev":[{"t":"아굴라·브리스길라를 만나 1년 6개월 사역","v":"행 18:1~18"},{"t":"고린도전·후서를 받은 교회","v":"고전 1장"}]},{"nm":"밀레도","lat":37.53,"lng":27.28,"now":"터키 밀레투스 유적","era":["신약"],"mean":"","ev":[{"t":"에베소 장로들에게 작별 설교","v":"행 20:17~38"}]},{"nm":"로마","lat":41.9,"lng":12.5,"now":"이탈리아 로마","era":["신약"],"mean":"","ev":[{"t":"바울이 가이사에게 상소해 압송됨","v":"행 25:11~12"},{"t":"2년간 연금 중에도 복음을 전함","v":"행 28:16~31"},{"t":"로마서를 받은 교회","v":"롬 1장"}]},{"nm":"멜리데","lat":35.9,"lng":14.4,"now":"몰타 섬","era":["신약"],"mean":"","ev":[{"t":"로마로 가던 배가 파선, 독사에 물려도 무사","v":"행 27~28장"}]},{"nm":"구브로","lat":35,"lng":33,"now":"키프로스 섬","era":["신약"],"mean":"","ev":[{"t":"바나바의 고향. 1차 전도여행 경유지","v":"행 13:4~12"}]}];
+// 여정 경로 — 학자 통설 기준. era=어느 탭에서 보이는지, color=선 색
+// stops: 경유 도시마다 [위도, 경도, 도시명, 그곳에서 한 일, 성경구절]
+const ROUTES = [
+  { id:"abraham", era:"구약", name:"아브라함의 이동", color:"#16a085",
+    stops:[
+      [30.96,46.10,"우르","하나님의 부르심을 받고 고향을 떠남","창 11~12장"],
+      [36.86,39.03,"하란","아버지 데라와 머물다 다시 출발","창 11:31"],
+      [32.21,35.28,"세겜","가나안 땅에서 첫 제단을 쌓음","창 12:6~7"],
+      [31.93,35.22,"벧엘","제단을 쌓고 여호와의 이름을 부름","창 12:8"],
+      [30.00,31.20,"애굽","기근을 피해 잠시 내려감","창 12:10"],
+      [31.53,35.10,"헤브론","정착하여 막벨라 굴을 묘지로 삼음","창 13:18, 23장"]] },
+  { id:"exodus", era:"구약", name:"출애굽 경로", color:"#d35400",
+    stops:[
+      [30.80,31.83,"애굽(라암셋)","열 재앙 후 이스라엘이 출발","출 12:37"],
+      [29.55,32.95,"홍해","바다가 갈라져 마른 땅으로 건넘","출 14장"],
+      [28.54,33.97,"시내산","모세가 십계명과 율법을 받음","출 19~20장"],
+      [30.40,34.50,"가데스바네아","12정탐꾼을 보냄, 40년 광야의 전환점","민 13~14장"],
+      [31.85,35.62,"모압 평지","요단 건너기 전 마지막 진영","민 22장, 신 34장"]] },
+  { id:"jesus", era:"예수님", name:"예수님 공생애 동선", color:"#7b3f9e",
+    stops:[
+      [31.70,35.20,"베들레헴","태어나심","눅 2:1~7"],
+      [32.70,35.30,"나사렛","자라나신 고향","눅 2:39~40"],
+      [32.00,35.55,"요단강","세례 요한에게 세례 받으심","마 3:13~17"],
+      [32.75,35.34,"가나","물로 포도주를 만드신 첫 이적","요 2:1~11"],
+      [32.88,35.57,"가버나움","갈릴리 사역의 본거지","마 4:13"],
+      [32.83,35.59,"갈릴리 바다","제자들을 부르시고 풍랑을 잠잠케 하심","마 4,8장"],
+      [31.87,35.44,"여리고","삭개오를 만나심","눅 19장"],
+      [31.78,35.23,"예루살렘","십자가에 못 박히고 부활하심","마 27~28장"]] },
+  { id:"paul1", era:"신약", name:"바울 1차 전도여행", color:"#c0392b",
+    stops:[
+      [36.20,36.16,"안디옥","바나바와 함께 파송받아 출발","행 13:1~3"],
+      [35.12,33.94,"구브로","총독 서기오 바울이 믿음","행 13:4~12"],
+      [38.31,31.19,"비시디아 안디옥","회당에서 담대히 복음 전함","행 13:14~50"],
+      [37.58,33.30,"루스드라","앉은뱅이를 고치나 돌에 맞음","행 14:8~20"],
+      [36.20,36.16,"안디옥(귀환)","교회에 사역을 보고함","행 14:26~28"]] },
+  { id:"paul2", era:"신약", name:"바울 2차 전도여행", color:"#8e44ad",
+    stops:[
+      [36.20,36.16,"안디옥","실라와 함께 다시 출발","행 15:40"],
+      [39.75,26.16,"드로아","마게도냐로 건너오라는 환상을 봄","행 16:8~10"],
+      [41.01,24.29,"빌립보","유럽 첫 교회, 루디아 회심","행 16:11~15"],
+      [40.64,22.94,"데살로니가","회당 전도, 박해로 떠남","행 17:1~10"],
+      [37.98,23.73,"아덴","아레오바고에서 '알지 못하는 신' 전함","행 17:16~34"],
+      [37.94,22.93,"고린도","1년 6개월 머물며 사역","행 18:1~18"],
+      [36.20,36.16,"안디옥(귀환)","여정을 마치고 돌아옴","행 18:22"]] },
+  { id:"paul3", era:"신약", name:"바울 3차 전도여행", color:"#2980b9",
+    stops:[
+      [36.20,36.16,"안디옥","세 번째로 출발","행 18:23"],
+      [37.94,27.34,"에베소","2년 넘게 장기 사역, 큰 부흥","행 19장"],
+      [37.94,22.93,"고린도","머물며 로마서를 씀(추정)","행 20:2~3"],
+      [37.53,27.28,"밀레도","에베소 장로들에게 작별 설교","행 20:17~38"],
+      [31.78,35.23,"예루살렘","체포되어 갇힘","행 21:17~33"]] },
+  { id:"rome", era:"신약", name:"바울 로마 압송 항해", color:"#d68910",
+    stops:[
+      [32.50,34.89,"가이사랴","가이사에게 상소, 죄수로 출항","행 25:11~12"],
+      [35.90,14.40,"멜리데(몰타)","배가 파선, 독사에 물려도 무사","행 27~28장"],
+      [41.90,12.50,"로마","연금 중에도 담대히 복음 전함","행 28:16~31"]] },
+];
+// stops에서 path 자동 생성
+ROUTES.forEach(r=>{ r.path=r.stops.map(s=>[s[0],s[1]]); });
+
 const $=s=>document.querySelector(s);
 
 // 시대 판별 (사건 구절 책이름 기준)
@@ -91,6 +198,8 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r
 
 let curEra='구약';
 let markers=[];
+let routeLayers={};   // id -> polyline layer
+let routeOn={};       // id -> bool
 
 function makeIcon(name){
   return L.divIcon({
@@ -107,6 +216,71 @@ function renderMarkers(){
     mk.on('click',()=>openPanel(p));
     markers.push(mk);
   });
+}
+
+// 여정 선 그리기/지우기 — 경유지마다 순번 + 한 일 표시
+function setRoute(r,on){
+  routeOn[r.id]=on;
+  if(routeLayers[r.id]){ map.removeLayer(routeLayers[r.id]); delete routeLayers[r.id]; }
+  if(on){
+    const group=L.layerGroup();
+    // 선 (흰 테두리 + 색)
+    L.polyline(r.path,{color:'#fff',weight:7,opacity:0.55,lineCap:'round'}).addTo(group);
+    L.polyline(r.path,{color:r.color,weight:3.5,opacity:0.95,lineCap:'round'}).addTo(group);
+    // 경유지마다 순번 핀
+    r.stops.forEach((s,i)=>{
+      const num=i+1;
+      const ic=L.divIcon({className:'',iconSize:[0,0],iconAnchor:[0,0],
+        html:'<div class="rstop"><div class="rnum" style="background:'+r.color+'">'+num+'</div>'
+            +'<div class="rnm">'+s[2]+'</div></div>'});
+      const mk=L.marker([s[0],s[1]],{icon:ic,zIndexOffset:1000}).addTo(group);
+      mk.on('click',()=>openStop(r,i));
+    });
+    group.addTo(map);
+    routeLayers[r.id]=group;
+  }
+}
+
+// 여정 경유지 한 곳의 '한 일'을 패널에 표시
+function openStop(r,i){
+  const s=r.stops[i];
+  $('#pName').textContent=(i+1)+'. '+s[2];
+  $('#pNow').textContent=r.name;
+  $('#pMeaning').textContent='';
+  const ev=$('#pEvents'); ev.innerHTML='';
+  const d=document.createElement('div'); d.className='evt';
+  d.style.borderLeftColor=r.color;
+  d.innerHTML='<div class="t">'+s[3]+'</div><div class="v">'+s[4]+'</div>';
+  ev.appendChild(d);
+  // 전체 여정 순서 미리보기
+  const all=document.createElement('div'); all.className='routelist';
+  all.innerHTML='<div class="rlh">전체 경로</div>'+r.stops.map((x,j)=>
+    '<span class="rli'+(j===i?' cur':'')+'">'+(j+1)+' '+x[2]+'</span>').join('<span class="arr">→</span>');
+  ev.appendChild(all);
+  $('#panel').classList.add('show');
+  map.panTo([s[0],s[1]]);
+}
+
+// 탭에 맞는 여정 버튼 갱신
+function renderRouteToggles(){
+  const wrap=$('#routes'); wrap.innerHTML='';
+  ROUTES.filter(r=>r.era===curEra).forEach(r=>{
+    const b=document.createElement('div');
+    b.className='rt'+(routeOn[r.id]?' on':'');
+    b.innerHTML='<span class="sw" style="background:'+r.color+'"></span>'+r.name;
+    b.addEventListener('click',()=>{
+      const nowOn=!routeOn[r.id];
+      setRoute(r,nowOn);
+      b.classList.toggle('on',nowOn);
+      if(nowOn) map.fitBounds(L.polyline(r.path).getBounds(),{padding:[40,40]});
+    });
+    wrap.appendChild(b);
+  });
+}
+
+// 탭 바뀌면 다른 시대 여정 선은 지움
+function clearOtherEraRoutes(){
+  ROUTES.forEach(r=>{ if(r.era!==curEra && routeLayers[r.id]){ map.removeLayer(routeLayers[r.id]); delete routeLayers[r.id]; routeOn[r.id]=false; } });
 }
 
 function openPanel(p){
@@ -136,11 +310,51 @@ document.querySelectorAll('.tab').forEach(t=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     t.classList.add('active'); curEra=t.dataset.era;
     $('#panel').classList.remove('show');
+    clearOtherEraRoutes();
     renderMarkers();
+    renderRouteToggles();
   });
 });
 
+// ===== 검색 =====
+const sIn=$('#searchInput'), sRes=$('#searchResults'), sClr=$('#searchClear');
+function runSearch(q){
+  q=q.trim();
+  sClr.style.display=q?'block':'none';
+  if(!q){ sRes.classList.remove('show'); sRes.innerHTML=''; return; }
+  const hits=PLACES.filter(p=>p.nm.includes(q)||(p.now&&p.now.includes(q)));
+  if(!hits.length){
+    sRes.innerHTML='<div class="sr none">검색 결과가 없어요. (성경 지명만 검색됩니다)</div>';
+  }else{
+    sRes.innerHTML=hits.map(p=>
+      '<div class="sr" data-nm="'+p.nm+'"><span class="srn">'+p.nm+'</span>'
+      +'<span class="srnow">'+(p.now||'')+'</span></div>').join('');
+  }
+  sRes.classList.add('show');
+}
+sIn.addEventListener('input',e=>runSearch(e.target.value));
+sClr.addEventListener('click',()=>{ sIn.value=''; runSearch(''); sIn.focus(); });
+sRes.addEventListener('click',e=>{
+  const el=e.target.closest('.sr[data-nm]'); if(!el) return;
+  const p=PLACES.find(x=>x.nm===el.dataset.nm);
+  // 그 지명이 보이는 탭으로 전환
+  if(!p.era.includes(curEra)){
+    const want=p.era[0];
+    document.querySelectorAll('.tab').forEach(t=>{
+      t.classList.toggle('active',t.dataset.era===want);
+    });
+    curEra=want; clearOtherEraRoutes(); renderMarkers(); renderRouteToggles();
+  }
+  sRes.classList.remove('show'); sIn.value=''; sClr.style.display='none';
+  map.setView([p.lat,p.lng],9);
+  openPanel(p);
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#searchbar')) sRes.classList.remove('show');
+});
+
 renderMarkers();
+renderRouteToggles();
 </script>
 </body>
 </html>
