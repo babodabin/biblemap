@@ -16,8 +16,12 @@
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   :root{ --ink:#3a3226; --panel:#fff8ec; --line:#e0d4b8; }
+  html{background:#fff8ec;}
   html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:#fff8ec;}
-  body{display:flex;flex-direction:column;height:100%;}
+  body{display:flex;flex-direction:column;height:100%;background:#fff8ec;}
+  /* 상단 상태바 영역을 양피지색으로 덮는 고정 레이어 */
+  body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);
+    background:#fff8ec;z-index:2000;pointer-events:none;}
   header{padding:calc(10px + env(safe-area-inset-top)) 16px 8px;background:#fff8ec;border-bottom:1px solid var(--line);z-index:1000;}
   .titlerow{display:flex;align-items:baseline;gap:8px;}
   h1{font-family:'Gowun Batang',serif;font-size:21px;font-weight:700;color:var(--ink);}
@@ -324,7 +328,12 @@ function openStop(r,i){
     '<span class="rli'+(j===i?' cur':'')+'" data-i="'+j+'" style="'+(j===i?'background:'+r.color+';color:#fff':'')+'">'+(j+1)+' '+x[2]+'</span>').join('<span class="arr">→</span>');
   ev.appendChild(all);
   $('#panel').classList.add('show');
-  map.setView([s[0],s[1]], Math.max(map.getZoom(),8));
+  // 도시를 패널에 가리지 않게 화면 위쪽 영역 중앙에 배치
+  map.setView([s[0],s[1]], Math.max(map.getZoom(),8), {animate:false});
+  setTimeout(()=>{
+    const h=map.getSize().y;
+    map.panBy([0, -h*0.28], {animate:true});  // 위로 끌어올려 패널 위에 보이게
+  }, 60);
 }
 // 이전/다음 버튼
 document.addEventListener('click',e=>{
