@@ -328,12 +328,16 @@ function openStop(r,i){
     '<span class="rli'+(j===i?' cur':'')+'" data-i="'+j+'" style="'+(j===i?'background:'+r.color+';color:#fff':'')+'">'+(j+1)+' '+x[2]+'</span>').join('<span class="arr">→</span>');
   ev.appendChild(all);
   $('#panel').classList.add('show');
-  // 도시를 패널에 가리지 않게 화면 위쪽 영역 중앙에 배치
-  map.setView([s[0],s[1]], Math.max(map.getZoom(),8), {animate:false});
-  setTimeout(()=>{
-    const h=map.getSize().y;
-    map.panBy([0, -h*0.28], {animate:true});  // 위로 끌어올려 패널 위에 보이게
-  }, 60);
+  // 도시를 패널에 안 가리게 — 화면 위쪽(보이는 영역) 중앙에 핀 배치
+  const z=Math.max(map.getZoom(),8);
+  requestAnimationFrame(()=>{
+    const size=map.getSize();            // 지도 영역 픽셀 크기
+    const targetPt=map.project([s[0],s[1]], z);
+    // 핀을 화면 세로 25% 지점에 두기 위해, 지도 중심을 그만큼 아래로 내림
+    const offsetY=size.y*0.5 - size.y*0.25;   // 중심(50%)과 목표(25%)의 차이
+    const centerPt=targetPt.add([0, offsetY]);
+    map.setView(map.unproject(centerPt, z), z, {animate:true});
+  });
 }
 // 이전/다음 버튼
 document.addEventListener('click',e=>{
