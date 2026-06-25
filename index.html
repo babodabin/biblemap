@@ -108,8 +108,10 @@
   #pMeaning{font-size:13px;color:#8a7a58;margin-top:3px;font-style:italic;}
   #pEvents{margin-top:14px;display:flex;flex-direction:column;gap:11px;}
   .evt{border-left:3px solid #d8b048;padding:2px 0 2px 11px;}
-  .evt .t{font-size:14px;font-weight:600;color:#3a3226;line-height:1.4;}
+  .evt .t{font-size:14px;font-weight:600;color:#3a3226;line-height:1.55;}
   .evt .v{font-size:12px;color:#a08a60;margin-top:2px;}
+  .evt .leg{display:inline-block;font-size:11.5px;font-weight:600;color:#7a6a48;
+    background:#f0e6d0;border-radius:11px;padding:3px 9px;margin-top:6px;margin-bottom:2px;}
   .empty{font-size:13px;color:#a89878;margin-top:12px;}
   .leaflet-control-attribution{font-size:9px;}
 
@@ -186,12 +188,12 @@ const PLACES = [{"nm":"예루살렘","lat":31.78,"lng":35.23,"now":"이스라엘
 const ROUTES = [
   { id:"abraham", era:"구약", name:"아브라함의 이동", color:"#16a085",
     stops:[
-      [30.96,46.10,"우르","하나님의 부르심을 받고 고향을 떠남","창 11~12장"],
-      [36.86,39.03,"하란","아버지 데라와 머물다 다시 출발","창 11:31"],
-      [32.21,35.28,"세겜","가나안 땅에서 첫 제단을 쌓음","창 12:6~7"],
-      [31.93,35.22,"벧엘","제단을 쌓고 여호와의 이름을 부름","창 12:8"],
-      [30.00,31.20,"애굽","기근을 피해 잠시 내려감","창 12:10"],
-      [31.53,35.10,"헤브론","정착하여 막벨라 굴을 묘지로 삼음","창 13:18, 23장"]] },
+      [30.96,46.10,"우르","갈대아 우르는 달 신을 섬기던 번성한 도시였다. 하나님이 아브람에게 고향과 친척을 떠나 '내가 보여줄 땅으로 가라' 부르시자, 그는 75세에 약속만 붙들고 길을 나섰다.","창 11:31, 12:1~4"],
+      [36.86,39.03,"하란","아버지 데라가 이곳에 정착해 죽기까지 가족이 머물렀다. 데라 사후 아브람은 아내 사래와 조카 롯, 모은 재산을 이끌고 다시 가나안을 향해 떠났다.","창 11:31~32, 12:5"],
+      [32.21,35.28,"세겜","가나안 땅에 들어와 처음 멈춘 곳. 여호와께서 '이 땅을 네 자손에게 주리라' 나타나시자, 아브람은 그곳에 첫 제단을 쌓아 응답했다.","창 12:6~7"],
+      [31.93,35.22,"벧엘","세겜에서 남쪽으로 옮겨 벧엘과 아이 사이에 장막을 치고 또 제단을 쌓아 여호와의 이름을 불렀다. 그의 발걸음마다 예배가 따랐다.","창 12:8"],
+      [30.00,31.20,"애굽","가나안에 기근이 들자 아브람은 애굽으로 내려갔다. 아내를 누이라 속이는 연약함을 보였으나, 하나님은 그를 보호해 다시 가나안으로 올려보내셨다.","창 12:10~20"],
+      [31.53,35.10,"헤브론","마침내 헤브론 마므레 상수리나무 곁에 정착해 제단을 쌓았다. 훗날 사래가 죽자 막벨라 굴을 사 가족 매장지로 삼으니, 약속의 땅에 첫 발판을 얻은 셈이다.","창 13:18, 23장"]] },
   { id:"exodus", era:"구약", name:"출애굽 경로", color:"#d35400",
     stops:[
       [30.80,31.83,"애굽(라암셋)","열 재앙 후 이스라엘이 출발","출 12:37"],
@@ -300,10 +302,26 @@ const ROUTES = [
   { id:"paul4", era:"신약", name:"바울 4차 (석방 후) 전승 여정", color:"#5b2c6f",
     stops:[
       [41.90,12.50,"로마","1차 투옥에서 풀려나 다시 길을 떠남(전승)","딤후 4장 배경"],
-      [40.46,17.24,"그레데","디도를 남겨 교회를 세우게 함","딛 1:5"],
+      [35.24,24.92,"그레데","디도를 남겨 교회를 세우게 함","딛 1:5"],
       [39.16,26.85,"에베소","디모데를 남기고 거짓 교사를 경계시킴","딤전 1:3"],
       [39.62,20.90,"니고볼리","겨울을 나기로 정한 곳","딛 3:12"],
       [41.90,12.50,"로마(재투옥·순교)","다시 잡혀 순교한 것으로 전해짐","딤후 4:6~8"]] },
+  { id:"elisha", era:"구약", name:"엘리사의 행적", color:"#1e8449",
+    stops:[
+      [32.81,35.18,"아벨므홀라","밭 갈다 엘리야의 부름을 받아 따름","왕상 19:19~21"],
+      [31.87,35.46,"여리고","엘리야 승천 후 쓴 물을 고침","왕하 2:19~22"],
+      [31.93,35.22,"벧엘","대머리라 조롱한 아이들 사건","왕하 2:23~25"],
+      [32.41,35.30,"수넴","여인의 죽은 아들을 살림","왕하 4:8~37"],
+      [32.32,35.32,"길갈","독든 국과 보리떡 이적","왕하 4:38~44"],
+      [32.28,35.19,"사마리아","나아만의 나병을 고침(요단강 처방)","왕하 5장"],
+      [33.51,36.29,"다메섹","하사엘이 왕이 될 것을 예언","왕하 8:7~15"]] },
+  { id:"return", era:"구약", name:"에스라·느헤미야 귀환로", color:"#117a65",
+    stops:[
+      [32.54,44.42,"바벨론","포로 생활하던 땅","스 1장"],
+      [32.18,48.25,"수산궁","느헤미야가 왕의 술 관원으로 일하며 예루살렘 소식을 들음","느 1~2장"],
+      [34.80,43.50,"아하와 강","에스라가 귀환 무리와 금식하며 보호를 구함","스 8:21~23"],
+      [33.51,36.29,"다메섹 방향","유프라테스를 따라 북상해 가나안으로 향함","스 8장 경로"],
+      [31.78,35.23,"예루살렘","성전을 재건(에스라)하고 성벽을 쌓음(느헤미야)","스 6장, 느 6:15"]] },
 ];
 // stops에서 path 자동 생성
 ROUTES.forEach(r=>{ r.path=r.stops.map(s=>[s[0],s[1]]); });
@@ -484,6 +502,30 @@ function setRoute(r,on){
   }
 }
 
+// 두 지점 직선거리(km) — Haversine
+function distKm(a,b){
+  const R=6371, toR=x=>x*Math.PI/180;
+  const dLat=toR(b[0]-a[0]), dLng=toR(b[1]-a[1]);
+  const h=Math.sin(dLat/2)**2+Math.cos(toR(a[0]))*Math.cos(toR(b[0]))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+// 항해 구간 판별 — 지중해를 건너는 stop은 배 이동으로 본다
+const SEA_STOPS={
+  rome:[1,2], paul2:[1], paul4:[1,2,4], jonah:[1], nativity:[3]
+};
+function isSeaLeg(r,i){ return (SEA_STOPS[r.id]||[]).includes(i); }
+// 경유지 i 도착까지: 직전 구간 거리와 추정 일수
+function legInfo(r,i){
+  if(i===0) return null;
+  const straight=distKm(r.stops[i-1], r.stops[i]);
+  const sea=isSeaLeg(r,i);
+  // 육로는 굴곡 보정 1.3배, 하루 약 30km / 항해는 직선 가깝게, 하루 약 130km
+  const real=sea?straight*1.05:straight*1.3;
+  const perDay=sea?130:30;
+  const days=Math.max(1,Math.round(real/perDay));
+  return {km:Math.round(real), days, sea};
+}
+
 // 여정 경유지 한 곳의 '한 일'을 패널에 표시
 let curRoute=null;
 function openStop(r,i){
@@ -497,7 +539,11 @@ function openStop(r,i){
   const ev=$('#pEvents'); ev.innerHTML='';
   const d=document.createElement('div'); d.className='evt';
   d.style.borderLeftColor=r.color;
-  d.innerHTML='<div class="t">'+s[3]+'</div><div class="v">'+s[4]+'</div>';
+  const leg=legInfo(r,i);
+  const legLine=leg
+    ? '<div class="leg">'+(leg.sea?'⛵ 항해':'🚶 도보')+' · 이전 지점에서 약 '+leg.km+'km · 추정 '+leg.days+'일</div>'
+    : '<div class="leg">📍 출발지</div>';
+  d.innerHTML='<div class="t">'+s[3]+'</div>'+legLine+'<div class="v">'+s[4]+'</div>';
   ev.appendChild(d);
   // 이전/다음 이동 버튼
   const nav=document.createElement('div'); nav.className='stopnav';
