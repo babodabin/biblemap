@@ -66,12 +66,28 @@
     padding:1px 5px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.2);}
 
   /* 여정 토글 */
-  #routes{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
-  #routes:empty{display:none;}
-  .rt{font-size:11.5px;font-weight:500;color:#7a6c50;padding:5px 10px;border-radius:20px;
-    border:1px solid var(--line);background:#fdfaf2;cursor:pointer;display:flex;align-items:center;gap:5px;}
-  .rt .sw{width:14px;height:3px;border-radius:2px;display:inline-block;}
-  .rt.on{background:#2a2418;color:#fff8ec;border-color:#2a2418;}
+  /* 여정 드롭다운 */
+  #routeDrop{position:relative;margin-top:8px;}
+  #routeDrop.hide{display:none;}
+  #routeBtn{width:100%;display:flex;align-items:center;justify-content:space-between;
+    font-family:inherit;font-size:13px;font-weight:600;color:#7a6c50;
+    padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:#fdfaf2;cursor:pointer;}
+  #routeBtn.on{background:#2a2418;color:#fff8ec;border-color:#2a2418;}
+  #routeBtn .rcaret{font-size:11px;opacity:0.7;transition:transform .2s;}
+  #routeDrop.open #routeBtn .rcaret{transform:rotate(180deg);}
+  #routeBtnLabel{display:flex;align-items:center;gap:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #routeBtnLabel .sw{width:14px;height:3px;border-radius:2px;flex-shrink:0;}
+  #routeMenu{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:1200;
+    background:#fff;border:1px solid var(--line);border-radius:9px;box-shadow:0 4px 16px rgba(0,0,0,0.15);
+    max-height:300px;overflow-y:auto;display:none;}
+  #routeDrop.open #routeMenu{display:block;}
+  .rmi{display:flex;align-items:center;gap:8px;padding:11px 13px;font-size:13px;color:#3a3226;
+    cursor:pointer;border-bottom:1px solid #f2ead8;}
+  .rmi:last-child{border-bottom:none;}
+  .rmi:active{background:#f7f0df;}
+  .rmi.on{background:#f0e6d0;font-weight:700;}
+  .rmi .sw{width:16px;height:3px;border-radius:2px;flex-shrink:0;}
+  .rmi .rmclose{margin-left:auto;font-size:11px;color:#b0a080;}
 
   #map{flex:1;width:100%;background:#aecbd6;z-index:1;}
 
@@ -90,7 +106,7 @@
   #panel{position:fixed;left:0;right:0;bottom:0;z-index:1500;background:var(--panel);
     border-top-left-radius:20px;border-top-right-radius:20px;box-shadow:0 -6px 24px rgba(0,0,0,0.25);
     transform:translateY(110%);transition:transform .32s cubic-bezier(.3,.8,.4,1);
-    max-height:60%;overflow-y:auto;padding:18px 20px calc(22px + env(safe-area-inset-bottom));}
+    max-height:48%;overflow-y:auto;padding:18px 20px calc(18px + env(safe-area-inset-bottom));}
   #panel.show{transform:translateY(0);}
   #panel .ph{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-right:38px;}
   #pName{font-family:'Gowun Batang',serif;font-size:23px;font-weight:700;color:#2a2418;flex-shrink:0;
@@ -123,7 +139,7 @@
     padding:1px 5px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.2);}
 
   /* 패널 안 전체 경로 미리보기 */
-  .routelist{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);
+  .routelist{margin-top:20px;padding-top:14px;border-top:1px dashed var(--line);
     font-size:12px;color:#8a7a58;line-height:1.9;}
   .routelist .rlh{font-size:11px;font-weight:700;color:#b0a080;margin-bottom:4px;}
   .rli{display:inline-block;padding:3px 9px;border-radius:11px;background:#f0e6d0;margin:2px 0;cursor:pointer;}
@@ -164,7 +180,10 @@
     <button id="searchClear">×</button>
     <div id="searchResults"></div>
   </div>
-  <div id="routes"></div>
+  <div id="routeDrop">
+    <button id="routeBtn"><span id="routeBtnLabel">여정 선택</span><span class="rcaret">▾</span></button>
+    <div id="routeMenu"></div>
+  </div>
   <div id="era-slider">
     <div id="eraLabel"></div>
     <input id="eraRange" type="range" min="0" max="5" step="1" value="0">
@@ -557,13 +576,19 @@ function openStop(r,i){
     '<span class="rli'+(j===i?' cur':'')+'" data-i="'+j+'" style="'+(j===i?'background:'+r.color+';color:#fff':'')+'">'+(j+1)+' '+x[2]+'</span>').join('<span class="arr">→</span>');
   ev.appendChild(all);
   $('#panel').classList.add('show');
-  // 도시를 패널에 안 가리게 — 화면 위쪽(보이는 영역) 중앙에 핀 배치
-  const z=Math.max(map.getZoom(),8);
+  centerAbovePanel([s[0],s[1]], Math.max(map.getZoom(),8));
+}
+// 패널이 가리지 않는 영역(패널 위쪽 공간)의 중앙에 좌표를 배치
+function centerAbovePanel(latlng, zoom){
+  const z=(zoom!=null)?zoom:map.getZoom();
   requestAnimationFrame(()=>{
-    const size=map.getSize();            // 지도 영역 픽셀 크기
-    const targetPt=map.project([s[0],s[1]], z);
-    // 핀을 화면 세로 25% 지점에 두기 위해, 지도 중심을 그만큼 아래로 내림
-    const offsetY=size.y*0.5 - size.y*0.25;   // 중심(50%)과 목표(25%)의 차이
+    const size=map.getSize();
+    const panel=$('#panel');
+    // 패널이 실제 덮는 높이(없으면 0)
+    const panelH=panel.classList.contains('show')?panel.getBoundingClientRect().height:0;
+    const visibleMid=(size.y-panelH)/2;          // 패널 위 빈 공간의 세로 중앙
+    const targetPt=map.project(latlng, z);
+    const offsetY=size.y*0.5 - visibleMid;        // 지도 중심을 그만큼 내림
     const centerPt=targetPt.add([0, offsetY]);
     map.setView(map.unproject(centerPt, z), z, {animate:true});
   });
@@ -579,33 +604,51 @@ document.addEventListener('click',e=>{
   if(chip && curRoute){ openStop(curRoute, +chip.dataset.i); }
 });
 
-// 탭에 맞는 여정 버튼 갱신
+// 탭에 맞는 여정 드롭다운 갱신
+let activeRoute=null;   // 현재 켜진 여정 (드롭다운 라벨용)
 function renderRouteToggles(){
-  const wrap=$('#routes'); wrap.innerHTML='';
-  ROUTES.filter(r=>r.era===curEra).forEach(r=>{
-    const b=document.createElement('div');
-    b.className='rt'+(routeOn[r.id]?' on':'');
-    b.innerHTML='<span class="sw" style="background:'+r.color+'"></span>'+r.name;
-    b.addEventListener('click',()=>{
+  const menu=$('#routeMenu'); menu.innerHTML='';
+  const list=ROUTES.filter(r=>r.era===curEra);
+  // 켜진 여정이 이 탭에 없으면 라벨 초기화
+  if(activeRoute && activeRoute.era!==curEra) activeRoute=null;
+  updateRouteBtn();
+  list.forEach(r=>{
+    const item=document.createElement('div');
+    item.className='rmi'+(routeOn[r.id]?' on':'');
+    item.innerHTML='<span class="sw" style="background:'+r.color+'"></span>'+r.name
+      +(routeOn[r.id]?'<span class="rmclose">끄기 ×</span>':'');
+    item.addEventListener('click',()=>{
+      $('#routeDrop').classList.remove('open');
       if(!routeOn[r.id]){
-        // 처음 누름 → 켜고 전체 경로 보기
-        setRoute(r,true);
-        b.classList.add('on');
+        setRoute(r,true); activeRoute=r;
         map.fitBounds(L.polyline(r.path).getBounds(),{padding:[40,40]});
         $('#panel').classList.remove('show');
-      } else if(!(curRoute===r && $('#panel').classList.contains('show'))){
-        // 켜진 상태에서 다시 누름 → 1번 도시 상세 열기
-        openStop(r,0);
       } else {
-        // 1번이 열린 상태에서 또 누름 → 끄기
-        setRoute(r,false);
-        b.classList.remove('on');
+        setRoute(r,false); if(activeRoute===r) activeRoute=null;
         $('#panel').classList.remove('show');
       }
+      renderRouteToggles();
     });
-    wrap.appendChild(b);
+    menu.appendChild(item);
   });
 }
+// 드롭다운 버튼 라벨/상태 갱신
+function updateRouteBtn(){
+  const btn=$('#routeBtn'), lab=$('#routeBtnLabel');
+  if(activeRoute){
+    btn.classList.add('on');
+    lab.innerHTML='<span class="sw" style="background:'+activeRoute.color+'"></span>'+activeRoute.name;
+  } else {
+    btn.classList.remove('on');
+    lab.textContent='여정 선택';
+  }
+}
+// 버튼 누르면 메뉴 토글
+$('#routeBtn').addEventListener('click',()=>$('#routeDrop').classList.toggle('open'));
+// 바깥 누르면 닫기
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#routeDrop')) $('#routeDrop').classList.remove('open');
+});
 
 // 탭 바뀌면 다른 시대 여정 선은 지움
 function clearOtherEraRoutes(){
@@ -630,8 +673,7 @@ function openPanel(p){
   } else ev.innerHTML='<div class="empty">기록된 사건이 아직 없어요.</div>';
   $('#panel').classList.add('show');
   highlightPlace(p);
-  // 핀이 패널에 가리지 않게 살짝 위로 이동
-  map.panTo([p.lat,p.lng]);
+  centerAbovePanel([p.lat,p.lng]);
 }
 $('#pClose').addEventListener('click',()=>{
   $('#panel').classList.remove('show');
@@ -725,7 +767,9 @@ $('#eraRange').addEventListener('input',e=>drawEra(+e.target.value));
 function enterEraMode(){
   markers.forEach(m=>map.removeLayer(m)); markers=[];
   ROUTES.forEach(r=>{ if(routeLayers[r.id]){ map.removeLayer(routeLayers[r.id]); delete routeLayers[r.id]; routeOn[r.id]=false; } });
-  $('#routes').style.display='none';
+  activeRoute=null;
+  $('#routeDrop').classList.add('hide');
+  $('#routeDrop').classList.remove('open');
   $('#searchbar').style.display='none';
   $('#era-slider').classList.add('show');
   drawEra(curEraIdx);
@@ -733,7 +777,7 @@ function enterEraMode(){
 function exitEraMode(){
   clearEra();
   $('#era-slider').classList.remove('show');
-  $('#routes').style.display='';
+  $('#routeDrop').classList.remove('hide');
   $('#searchbar').style.display='';
 }
 
