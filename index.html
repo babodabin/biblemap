@@ -143,13 +143,14 @@
   .rstop.sel .rnm{background:#c0392b;color:#fff8ec;font-weight:700;}
 
   /* 패널 안 전체 경로 미리보기 */
-  .routelist{margin-top:20px;padding-top:14px;padding-bottom:2px;border-top:1px dashed var(--line);
-    font-size:12px;color:#8a7a58;line-height:1.9;}
-  .routelist .rlh{font-size:11px;font-weight:700;color:#b0a080;margin-bottom:4px;}
-  .rli{display:inline-block;padding:3px 9px;border-radius:11px;background:#f0e6d0;margin:2px 0;cursor:pointer;}
+  .routelist{margin-top:18px;padding-top:14px;border-top:1px dashed var(--line);
+    font-size:12px;color:#8a7a58;}
+  .routelist .rlh{font-size:11px;font-weight:700;color:#b0a080;margin-bottom:8px;}
+  .rlwrap{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
+  .rli{display:inline-flex;align-items:center;padding:4px 10px;border-radius:11px;background:#f0e6d0;cursor:pointer;}
   .rli:active{background:#e0d0a8;}
   .rli.cur{background:#2a2418;color:#fff8ec;font-weight:700;}
-  .routelist .arr{color:#cbb98c;margin:0 2px;}
+  .routelist .arr{color:#cbb98c;}
 
   /* 검색창 */
   #searchbar{position:relative;margin-top:8px;}
@@ -590,8 +591,8 @@ function openStop(r,i){
   ev.appendChild(nav);
   // 전체 여정 순서 — 칩을 누르면 그곳으로 이동
   const all=document.createElement('div'); all.className='routelist';
-  all.innerHTML='<div class="rlh">전체 경로 (누르면 이동)</div>'+r.stops.map((x,j)=>
-    '<span class="rli'+(j===i?' cur':'')+'" data-i="'+j+'" style="'+(j===i?'background:'+r.color+';color:#fff':'')+'">'+(j+1)+' '+x[2]+'</span>').join('<span class="arr">→</span>');
+  all.innerHTML='<div class="rlh">전체 경로 (누르면 이동)</div><div class="rlwrap">'+r.stops.map((x,j)=>
+    '<span class="rli'+(j===i?' cur':'')+'" data-i="'+j+'" style="'+(j===i?'background:'+r.color+';color:#fff':'')+'">'+(j+1)+' '+x[2]+'</span>').join('<span class="arr">→</span>')+'</div>';
   ev.appendChild(all);
   $('#panel').classList.add('show');
   highlightStop(r,i);
@@ -640,8 +641,9 @@ function renderRouteToggles(){
       $('#routeDrop').classList.remove('open');
       if(!routeOn[r.id]){
         setRoute(r,true); activeRoute=r;
-        map.fitBounds(L.polyline(r.path).getBounds(),{padding:[40,40]});
-        $('#panel').classList.remove('show');
+        renderRouteToggles();
+        openStop(r,0);   // 첫 경유지를 빨강 강조로 바로 열기
+        return;
       } else {
         setRoute(r,false); if(activeRoute===r) activeRoute=null;
         $('#panel').classList.remove('show');
