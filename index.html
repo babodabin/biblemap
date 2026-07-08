@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>성경지도</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1f2d4a">
+<meta name="theme-color" content="#fff8ec">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="성경지도">
@@ -101,6 +101,9 @@
   .bp.sel .dot{width:15px;height:15px;background:#0e7c7b;border-color:#fff;
     box-shadow:0 0 0 3px rgba(14,124,123,0.3),0 1px 4px rgba(0,0,0,0.5);}
   .bp.sel .nm{background:#0e7c7b;color:#fff8ec;font-weight:700;}
+  /* 여정이 켜지면 도시 핀은 작은 점으로 축소 */
+  .bp.mini .dot{width:6px;height:6px;opacity:0.5;box-shadow:none;}
+  .bp.mini .nm{display:none;}
 
   /* 정보 패널 */
   #panel{position:fixed;left:0;right:0;bottom:0;z-index:1500;background:var(--panel);
@@ -299,13 +302,13 @@ const ROUTES = [
   { id:"theophany", era:"예수님", name:"하나님이 나타나신 곳 (신현)", color:"#b9770e", mode:"points",
     stops:[
       [28.54,33.97,"호렙산 (떨기나무)","모세에게 불붙는 떨기나무 가운데서 '나는 스스로 있는 자'로 나타나심","출 3장"],
-      [28.54,33.97,"시내산 (율법 수여)","연기와 불 가운데 강림해 십계명과 언약을 주심","출 19~20장"],
-      [28.54,33.97,"시내산 (얼굴을 못 봄)","모세가 '주의 영광을 보여달라' 구하나, '나를 보고 살 자가 없다' 하시고 바위 틈에 숨겨 등만 보이심","출 33:18~23"],
+      [28.56,34.01,"시내산 (율법 수여)","연기와 불 가운데 강림해 십계명과 언약을 주심","출 19~20장"],
+      [28.52,34.00,"시내산 (얼굴을 못 봄)","모세가 '주의 영광을 보여달라' 구하나, '나를 보고 살 자가 없다' 하시고 바위 틈에 숨겨 등만 보이심","출 33:18~23"],
       [31.78,35.23,"예루살렘 성전 (이사야 환상)","보좌에 높이 앉으신 주를 보고 '화로다 망하게 되었다' 두려워하자, 숯불로 입술을 정결케 하심","사 6장"],
       [31.93,35.22,"벧엘 (사다리 꿈)","야곱에게 하늘 사다리와 함께 나타나 언약을 확증하심","창 28:10~22"],
       [30.96,46.10,"우르·하란 (부르심)","아브라함에게 나타나 '본토를 떠나라' 부르심","창 12:1~3"],
       [31.53,35.10,"마므레 (언약)","아브람에게 나타나 자손과 땅을 언약하심(횃불 언약)","창 15장"],
-      [28.54,33.97,"호렙산 (세미한 소리)","엘리야에게 바람·지진·불이 아닌 조용한 소리로 임하심","왕상 19:8~18"],
+      [28.52,33.93,"호렙산 (세미한 소리)","엘리야에게 바람·지진·불이 아닌 조용한 소리로 임하심","왕상 19:8~18"],
       [32.83,35.59,"갈릴리 (변화산 추정)","예수님이 영광스러운 모습으로 변모하시고 하늘 음성이 남","마 17:1~8"]] },
   { id:"angels", era:"예수님", name:"천사가 나타난 곳", color:"#1f618d", mode:"points",
     stops:[
@@ -407,6 +410,48 @@ const ROUTES = [
       [34.80,43.50,"아하와 강","에스라가 귀환 무리와 금식하며 보호를 구함","스 8:21~23"],
       [33.51,36.29,"다메섹 방향","유프라테스를 따라 북상해 가나안으로 향함","스 8장 경로"],
       [31.78,35.23,"예루살렘","성전을 재건(에스라)하고 성벽을 쌓음(느헤미야)","스 6장, 느 6:15"]] },
+  { id:"miracles8", era:"예수님", name:"예수님 8대 기적", color:"#0e7c7b", mode:"points", zoom:9,
+    stops:[
+      [32.75,35.34,"가나 (물 → 포도주)","혼인 잔치에서 물로 포도주를 만드심. 표적의 시작으로 그 영광을 나타내심","요 2:1~11"],
+      [32.881,35.575,"가버나움 (중풍병자)","네 친구가 지붕을 뜯고 달아 내린 중풍병자를 '네 죄 사함을 받았느니라' 하시며 일으키심","막 2:1~12"],
+      [32.83,35.59,"갈릴리 바다 (풍랑·물 위)","말씀 한마디로 풍랑을 잠잠케 하시고, 물 위를 걸어 배에 오르심","마 8:23~27, 14:22~33"],
+      [32.873,35.549,"오병이어 들판","떡 다섯 개와 물고기 두 마리로 오천 명을 먹이시고 열두 광주리가 남음","요 6:1~14"],
+      [32.824,35.65,"거라사 (군대 귀신)","무덤에 살던 자에게서 '군대'라는 귀신을 쫓아내시니 돼지 떼에게로 들어감","막 5:1~20"],
+      [32.63,35.35,"나인 (과부의 아들)","장례 행렬을 멈추시고 과부의 외아들을 살려 어머니에게 돌려주심","눅 7:11~17"],
+      [31.782,35.236,"베데스다 못 (38년 병자)","38년 된 병자에게 '일어나 네 자리를 들고 걸어가라' 하시니 곧 나음","요 5:1~9"],
+      [31.771,35.259,"베다니 (나사로)","죽은 지 나흘 된 나사로를 '나사로야 나오라' 부르시니 무덤에서 살아 나옴","요 11:1~44"]] },
+  { id:"jesus_satan", era:"예수님", name:"예수님과 사탄의 싸움", color:"#943126", mode:"points", zoom:9,
+    stops:[
+      [31.87,35.43,"유대 광야 (첫째 시험)","40일 금식 후 '돌로 떡을 만들라'는 시험을 '사람이 떡으로만 살 것이 아니요' 말씀으로 이기심","마 4:1~4"],
+      [31.778,35.235,"성전 꼭대기 (둘째 시험)","'뛰어내리라'는 시험을 '주 너의 하나님을 시험하지 말라'로 물리치심","마 4:5~7"],
+      [31.86,35.45,"높은 산 (셋째 시험)","천하 만국을 보이며 경배를 요구하자 '사탄아 물러가라' 하시니 마귀가 떠나고 천사들이 수종듦","마 4:8~11"],
+      [32.881,35.575,"가버나움 회당","더러운 귀신이 '하나님의 거룩한 자'를 알아보고 소리치자 꾸짖어 쫓아내심","막 1:21~28"],
+      [32.824,35.65,"거라사","'군대' 귀신 들린 자를 온전케 하심. 귀신들이 예수님 앞에 엎드려 간구함","막 5:1~20"],
+      [33.27,35.20,"두로 지방","가나안 여인의 믿음을 보시고 멀리서 그 딸의 귀신을 쫓아내심","마 15:21~28"],
+      [32.69,35.39,"다볼산 아래 (변화산)","제자들이 못 고친 아이의 귀신을 꾸짖어 내쫓으시며 기도의 능력을 가르치심","마 17:14~21"],
+      [31.779,35.240,"겟세마네","'시험에 들지 않게 기도하라' 이르시고, 땀이 핏방울같이 되도록 기도로 싸우심","눅 22:39~46"],
+      [31.7786,35.2296,"골고다 (결정적 승리)","십자가로 통치자들과 권세들을 무력화하여 이기시고, 죽음의 세력 잡은 자를 멸하심","골 2:15, 히 2:14"]] },
+  { id:"jesus_last", era:"예수님", name:"예수님 마지막 길 (고난주간)", color:"#b03a2e", zoom:15, noleg:true,
+    stops:[
+      [31.771,35.259,"베다니","고난주간의 숙소. 마리아가 향유를 부어 장례를 예비함","마 26:6~13"],
+      [31.778,35.248,"벳바게·감람산","나귀 새끼를 타고 예루살렘에 입성하시니 무리가 '호산나' 외침","눅 19:29~38"],
+      [31.778,35.236,"성전","장사하는 자들을 내쫓아 성전을 정화하시고 날마다 가르치심","마 21:12~17"],
+      [31.7716,35.229,"마가의 다락방","제자들의 발을 씻기시고 최후의 만찬에서 떡과 잔을 나누심","요 13장, 막 14:12~26"],
+      [31.7794,35.2397,"겟세마네","'이 잔을 내게서 옮기시옵소서, 그러나 아버지의 뜻대로' 기도하신 후 잡히심","마 26:36~56"],
+      [31.7716,35.2317,"가야바의 집","대제사장 앞에서 심문받으시고, 뜰에서 베드로가 세 번 부인함","마 26:57~75"],
+      [31.780,35.2344,"빌라도 법정","로마 총독의 재판. 무리가 '십자가에 못 박으라' 외치고 빌라도가 넘겨줌","마 27:11~26"],
+      [31.7786,35.2296,"골고다","십자가에 못 박혀 '다 이루었다' 하시고 숨지심. 성소 휘장이 찢어짐","마 27:33~54, 요 19:30"],
+      [31.7790,35.2294,"무덤 (부활)","사흘 만에 다시 살아나심. '그가 여기 계시지 않고 살아나셨느니라'","마 28:1~10"],
+      [31.7789,35.2453,"감람산 (승천)","제자들이 보는 데서 하늘로 올려지시고, 다시 오시리라는 약속이 주어짐","행 1:9~12"]] },
+  { id:"disciples", era:"예수님", name:"제자들을 부르신 곳", color:"#1a5276", mode:"points", zoom:10,
+    stops:[
+      [31.84,35.55,"요단강 건너편 베다니","세례 요한의 두 제자 안드레와 요한이 '보라 하나님의 어린 양' 소리를 듣고 처음 따라감","요 1:35~40"],
+      [32.85,35.55,"갈릴리 바닷가 (베드로·안드레)","그물 던지는 두 형제에게 '나를 따라오라, 사람을 낚는 어부가 되게 하리라' 하심","마 4:18~20"],
+      [32.86,35.58,"갈릴리 바닷가 (야고보·요한)","배에서 그물 깁던 세베대의 두 아들이 배와 아버지를 두고 곧 따름","마 4:21~22"],
+      [32.881,35.573,"가버나움 세관 (마태)","세리 마태가 '나를 따르라' 한마디에 모든 것을 버리고 일어나 따름","마 9:9, 눅 5:27~28"],
+      [32.91,35.63,"벳새다 (빌립)","베드로·안드레와 한 동네 사람 빌립을 만나 '나를 따르라' 부르심","요 1:43~44"],
+      [32.75,35.34,"가나 (나다나엘)","무화과나무 아래를 보셨다는 말에 '랍비여, 하나님의 아들이시니이다' 고백함","요 1:45~51, 요 21:2"],
+      [32.885,35.55,"갈릴리 산 (열둘을 세우심)","밤새 기도하신 후 원하는 자들을 불러 열두 제자를 사도로 세우심","막 3:13~19, 눅 6:12~16"]] },
 ];
 // stops에서 path 자동 생성
 ROUTES.forEach(r=>{ r.path=r.stops.map(s=>[s[0],s[1]]); });
@@ -533,19 +578,24 @@ let markers=[];
 let routeLayers={};   // id -> polyline layer
 let routeOn={};       // id -> bool
 
-function makeIcon(name, sel){
+function makeIcon(name, sel, mini){
   return L.divIcon({
     className:'',
-    html:'<div class="bp'+(sel?' sel':'')+'"><div class="dot"></div><div class="nm">'+name+'</div></div>',
+    html:'<div class="bp'+(sel?' sel':'')+(mini?' mini':'')+'"><div class="dot"></div><div class="nm">'+name+'</div></div>',
     iconSize:[0,0], iconAnchor:[0,0]
   });
+}
+// 여정이 하나라도 켜져 있으면 도시 핀을 작은 점으로 축소
+function refreshCityMini(){
+  const mini=Object.keys(routeLayers).length>0;
+  markers.forEach(m=>{ if(m!==selMarker) m.setIcon(makeIcon(m._place.nm,false,mini)); });
 }
 
 let selMarker=null;   // 현재 선택된 도시 마커
 function renderMarkers(){
   markers.forEach(m=>map.removeLayer(m)); markers=[]; selMarker=null;
   PLACES.filter(p=>p.era.includes(curEra)).forEach(p=>{
-    const mk=L.marker([p.lat,p.lng],{icon:makeIcon(p.nm,false)}).addTo(map);
+    const mk=L.marker([p.lat,p.lng],{icon:makeIcon(p.nm,false,Object.keys(routeLayers).length>0)}).addTo(map);
     mk._place=p;
     mk.on('click',()=>openPanel(p));
     markers.push(mk);
@@ -555,7 +605,7 @@ function renderMarkers(){
 // 한 도시를 선택 강조 — 맨 앞으로 띄우고 색 바꿈
 function highlightPlace(p){
   // 이전 선택 해제
-  if(selMarker){ selMarker.setIcon(makeIcon(selMarker._place.nm,false)); selMarker.setZIndexOffset(0); }
+  if(selMarker){ selMarker.setIcon(makeIcon(selMarker._place.nm,false,Object.keys(routeLayers).length>0)); selMarker.setZIndexOffset(0); }
   const mk=markers.find(m=>m._place===p);
   if(mk){
     mk.setIcon(makeIcon(p.nm,true));
@@ -568,8 +618,9 @@ function highlightPlace(p){
 function setRoute(r,on){
   routeOn[r.id]=on;
   if(routeLayers[r.id]){ map.removeLayer(routeLayers[r.id]); delete routeLayers[r.id]; }
-  stopMarkers=[];
+  delete stopMarkers[r.id];
   if(on){
+    stopMarkers[r.id]=[];
     const group=L.layerGroup();
     // 여정 선 (points 모드는 선 없이 점만)
     if(r.mode!=='points'){
@@ -581,14 +632,15 @@ function setRoute(r,on){
       const mk=L.marker([s[0],s[1]],{icon:stopIcon(r,i,false),zIndexOffset:1000}).addTo(group);
       mk._ri=i;
       mk.on('click',()=>openStop(r,i));
-      stopMarkers.push(mk);
+      stopMarkers[r.id].push(mk);
     });
     group.addTo(map);
     routeLayers[r.id]=group;
   }
+  refreshCityMini();
 }
 // 경유지 핀 아이콘 (sel=선택 강조)
-let stopMarkers=[];
+let stopMarkers={};   // 여정 id -> 경유지 마커 배열
 function stopIcon(r,i,sel){
   const num=i+1;
   return L.divIcon({className:'',iconSize:[0,0],iconAnchor:[0,0],
@@ -597,7 +649,7 @@ function stopIcon(r,i,sel){
 }
 // 선택된 경유지만 강조
 function highlightStop(r,i){
-  stopMarkers.forEach(mk=>{
+  (stopMarkers[r.id]||[]).forEach(mk=>{
     mk.setIcon(stopIcon(r,mk._ri,mk._ri===i));
     mk.setZIndexOffset(mk._ri===i?3000:1000);
   });
@@ -612,7 +664,7 @@ function distKm(a,b){
 }
 // 항해 구간 판별 — 지중해를 건너는 stop은 배 이동으로 본다
 const SEA_STOPS={
-  rome:[1,2], paul2:[1], paul4:[1,2,4], jonah:[1], nativity:[3]
+  rome:[1,2], paul4:[1,2,4], jonah:[1,2]
 };
 function isSeaLeg(r,i){ return (SEA_STOPS[r.id]||[]).includes(i); }
 // 경유지 i 도착까지: 직전 구간 거리와 추정 일수
@@ -642,7 +694,7 @@ function openStop(r,i){
   d.style.borderLeftColor=r.color;
   const pts=(r.mode==='points');
   const leg=legInfo(r,i);
-  const legLine=pts
+  const legLine=(pts||r.noleg)
     ? ''
     : (leg
       ? '<div class="leg">'+(leg.sea?'⛵ 항해':'🚶 도보')+' · 이전 지점에서 약 '+leg.km+'km · 추정 '+leg.days+'일</div>'
@@ -664,7 +716,7 @@ function openStop(r,i){
   ev.appendChild(all);
   $('#panel').classList.add('show');
   highlightStop(r,i);
-  centerAbovePanel([s[0],s[1]], Math.max(map.getZoom(),8));
+  centerAbovePanel([s[0],s[1]], Math.max(map.getZoom(), r.zoom||8));
 }
 // 패널이 가리지 않는 영역(패널 위쪽 공간)의 중앙에 좌표를 배치
 function centerAbovePanel(latlng, zoom){
@@ -710,6 +762,7 @@ function renderRouteToggles(){
       if(!routeOn[r.id]){
         setRoute(r,true); activeRoute=r;
         renderRouteToggles();
+        map.setZoom(r.zoom||8,{animate:false});   // 여정별 기본 배율로 리셋
         openStop(r,0);   // 첫 경유지를 빨강 강조로 바로 열기
         return;
       } else {
@@ -766,7 +819,8 @@ function openPanel(p){
 }
 $('#pClose').addEventListener('click',()=>{
   $('#panel').classList.remove('show');
-  if(selMarker){ selMarker.setIcon(makeIcon(selMarker._place.nm,false)); selMarker.setZIndexOffset(0); selMarker=null; }
+  if(selMarker){ selMarker.setIcon(makeIcon(selMarker._place.nm,false,Object.keys(routeLayers).length>0)); selMarker.setZIndexOffset(0); selMarker=null; }
+  if(curRoute && routeOn[curRoute.id]) highlightStop(curRoute,-1);
 });
 
 // ===== 시대별 이스라엘 =====
