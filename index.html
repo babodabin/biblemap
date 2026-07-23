@@ -23,9 +23,18 @@
   body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);
     background:#fff8ec;z-index:2000;pointer-events:none;}
   header{padding:calc(10px + env(safe-area-inset-top)) 16px 8px;background:#fff8ec;border-bottom:1px solid var(--line);z-index:1000;}
-  .titlerow{display:flex;align-items:baseline;gap:8px;}
-  h1{font-family:'Gowun Batang',serif;font-size:21px;font-weight:700;color:var(--ink);}
-  h1 .en{font-size:9px;letter-spacing:0.3em;color:#a89878;text-transform:uppercase;}
+  .titlerow{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .titlegroup{display:flex;align-items:baseline;gap:8px;min-width:0;}
+  h1{font-family:'Gowun Batang',serif;font-size:21px;font-weight:700;color:var(--ink);white-space:nowrap;}
+  .titlerow .en{font-size:9px;letter-spacing:0.3em;color:#a89878;text-transform:uppercase;white-space:nowrap;}
+  #toolsToggle{flex:0 0 auto;display:flex;align-items:center;gap:6px;border:1px solid var(--line);
+    border-radius:10px;background:#fdfaf2;color:#7a6c50;font-family:inherit;font-size:11.5px;font-weight:700;
+    padding:7px 10px;cursor:pointer;}
+  #toolsToggle.on{background:var(--ink);color:#fff8ec;border-color:var(--ink);}
+  #toolsToggle .tc{font-size:10px;transition:transform .2s;}
+  #toolsToggle.on .tc{transform:rotate(180deg);}
+  #toolsWrap{display:block;}
+  #toolsWrap.collapsed{display:none;}
   #tabs{display:flex;gap:6px;margin-top:9px;}
   .tab{flex:1;text-align:center;font-size:12.5px;font-weight:500;color:#9a8a68;
     padding:8px 0;border-radius:9px;border:1px solid var(--line);background:#fdfaf2;cursor:pointer;}
@@ -169,33 +178,44 @@
   .sr{padding:9px 13px;font-size:13px;color:#3a3226;cursor:pointer;border-bottom:1px solid #f2ead8;}
   .sr:last-child{border-bottom:none;}
   .sr:active,.sr:hover{background:#f7f0df;}
-  .sr .srn{font-weight:600;}
-  .sr .srnow{font-size:11px;color:#a89878;margin-left:6px;}
+  .srhead{display:flex;align-items:center;gap:7px;min-width:0;}
+  .srtype{flex:0 0 auto;font-size:10px;font-weight:700;color:#fff;background:#8a7a58;border-radius:8px;padding:2px 6px;}
+  .srtype.route{background:#0e7c7b;}
+  .srtype.person{background:#d8943a;}
+  .srtype.era{background:#7b5fa0;}
+  .sr .srn{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sr .srnow{display:block;font-size:11px;color:#a89878;margin-top:3px;line-height:1.4;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .sr.none{color:#a89878;cursor:default;}
 </style>
 </head>
 <body>
 <header>
-  <div class="titlerow"><h1>성경지도</h1><span class="en">Bible Map</span></div>
+  <div class="titlerow">
+    <div class="titlegroup"><h1>성경지도</h1><span class="en">Bible Map</span></div>
+    <button id="toolsToggle" aria-expanded="false"><span class="tl">검색·여정</span><span class="tc">▾</span></button>
+  </div>
   <div id="tabs">
     <div class="tab active" data-era="구약">구약</div>
     <div class="tab" data-era="신약">신약</div>
     <div class="tab" data-era="예수님">예수님</div>
     <div class="tab" data-era="시대별">시대별</div>
   </div>
-  <div id="searchbar">
-    <input id="searchInput" type="text" placeholder="도시 검색 (예: 예루살렘, 로마)" autocomplete="off">
-    <button id="searchClear">×</button>
-    <div id="searchResults"></div>
-  </div>
-  <div id="routeDrop">
-    <button id="routeBtn"><span id="routeBtnLabel">여정 선택</span><span class="rcaret">▾</span></button>
-    <div id="routeMenu"></div>
-  </div>
-  <div id="era-slider">
-    <div id="eraLabel"></div>
-    <input id="eraRange" type="range" min="0" max="5" step="1" value="0">
-    <div id="eraTicks"></div>
+  <div id="toolsWrap" class="collapsed">
+    <div id="searchbar">
+      <input id="searchInput" type="text" placeholder="지명·인물·여정·사건·구절 검색" autocomplete="off">
+      <button id="searchClear">×</button>
+      <div id="searchResults"></div>
+    </div>
+    <div id="routeDrop">
+      <button id="routeBtn"><span id="routeBtnLabel">여정 선택</span><span class="rcaret">▾</span></button>
+      <div id="routeMenu"></div>
+    </div>
+    <div id="era-slider">
+      <div id="eraLabel"></div>
+      <input id="eraRange" type="range" min="0" max="5" step="1" value="0">
+      <div id="eraTicks"></div>
+    </div>
   </div>
 </header>
 <div id="map"></div>
@@ -603,6 +623,21 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r
   attribution:'© OpenStreetMap, © CARTO'
 }).addTo(map);
 
+// 상단 도구 접기/펼치기 — 기본은 접어서 지도를 넓게 표시
+function setToolsOpen(open){
+  const wrap=$('#toolsWrap'), btn=$('#toolsToggle');
+  wrap.classList.toggle('collapsed',!open);
+  btn.classList.toggle('on',open);
+  btn.setAttribute('aria-expanded',open?'true':'false');
+  btn.querySelector('.tl').textContent=open?'도구 닫기':'검색·여정';
+  if(!open){
+    $('#routeDrop').classList.remove('open');
+    $('#searchResults').classList.remove('show');
+  }
+  setTimeout(()=>map.invalidateSize({pan:false}),20);
+}
+$('#toolsToggle').addEventListener('click',()=>setToolsOpen($('#toolsWrap').classList.contains('collapsed')));
+
 let curEra='구약';
 let markers=[];
 let routeLayers={};   // id -> polyline layer
@@ -938,6 +973,7 @@ $('#eraRange').addEventListener('input',e=>drawEra(+e.target.value));
 
 // 시대별 모드 진입/이탈
 function enterEraMode(){
+  setToolsOpen(true);
   markers.forEach(m=>map.removeLayer(m)); markers=[];
   ROUTES.forEach(r=>{ if(routeLayers[r.id]){ map.removeLayer(routeLayers[r.id]); delete routeLayers[r.id]; routeOn[r.id]=false; } });
   activeRoute=null;
@@ -954,54 +990,129 @@ function exitEraMode(){
   $('#searchbar').style.display='';
 }
 
+function activateMainTab(want){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.era===want));
+  curEra=want;
+  $('#panel').classList.remove('show');
+  if(curEra==='시대별'){
+    enterEraMode();
+  } else {
+    exitEraMode();
+    clearOtherEraRoutes();
+    renderMarkers();
+    renderRouteToggles();
+  }
+}
 document.querySelectorAll('.tab').forEach(t=>{
-  t.addEventListener('click',()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active'); curEra=t.dataset.era;
-    $('#panel').classList.remove('show');
-    if(curEra==='시대별'){
-      enterEraMode();
-    } else {
-      exitEraMode();
-      clearOtherEraRoutes();
-      renderMarkers();
-      renderRouteToggles();
-    }
-  });
+  t.addEventListener('click',()=>activateMainTab(t.dataset.era));
 });
 
-// ===== 검색 =====
+// ===== 통합 검색: 지명·현대 지명·사건·구절·여정·경유지·시대·인물 =====
 const sIn=$('#searchInput'), sRes=$('#searchResults'), sClr=$('#searchClear');
+let searchHits=[];
+function searchEsc(v){ return String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function includesQ(v,q){ return String(v||'').toLocaleLowerCase('ko').includes(q); }
+function buildSearchHits(raw){
+  const q=raw.trim().toLocaleLowerCase('ko');
+  if(!q) return [];
+  const out=[];
+  PLACES.forEach(p=>{
+    const mev=(p.ev||[]).find(e=>includesQ(e.t,q)||includesQ(e.v,q));
+    if(includesQ(p.nm,q)||includesQ(p.now,q)||includesQ(p.mean,q)||mev){
+      out.push({kind:'place',label:p.nm,sub:mev?(mev.t+' · '+mev.v):(p.now||p.mean||'성경 지명'),place:p});
+    }
+  });
+  ROUTES.forEach(r=>{
+    if(includesQ(r.name,q)){
+      out.push({kind:'route',label:r.name,sub:'전체 여정 · '+r.stops.length+'개 지점',route:r,stopIndex:0});
+    }
+    r.stops.forEach((st,i)=>{
+      if(includesQ(st[2],q)||includesQ(st[3],q)||includesQ(st[4],q)){
+        out.push({kind:'routeStop',label:st[2],sub:r.name+' · '+st[3]+' · '+st[4],route:r,stopIndex:i});
+      }
+    });
+  });
+  ERAS.forEach((er,ei)=>{
+    if(includesQ(er.label,q)||includesQ(er.year,q)||includesQ(er.book,q)||includesQ(er.desc,q)){
+      out.push({kind:'era',label:er.label+' 시대',sub:er.year+' · '+er.desc,era:er,eraIndex:ei});
+    }
+    (er.people||[]).forEach(p=>{
+      if(includesQ(p[2],q)||includesQ(p[3],q)||includesQ(p[4],q)){
+        out.push({kind:'person',label:p[2],sub:er.label+' · '+p[3]+' · '+p[4],era:er,eraIndex:ei,person:p});
+      }
+    });
+    (er.capitals||[]).forEach(c=>{
+      if(includesQ(c[2],q)||includesQ(c[3],q)){
+        out.push({kind:'eraPlace',label:c[2],sub:er.label+' · '+c[3],era:er,eraIndex:ei,capital:c});
+      }
+    });
+  });
+  const seen=new Set();
+  return out.filter(h=>{
+    const key=h.kind+'|'+h.label+'|'+(h.route?.id||'')+'|'+(h.stopIndex??'')+'|'+(h.era?.key||'');
+    if(seen.has(key)) return false; seen.add(key); return true;
+  }).slice(0,60);
+}
+function resultType(h){
+  if(h.kind==='place') return ['지명',''];
+  if(h.kind==='route') return ['여정','route'];
+  if(h.kind==='routeStop') return ['경유지','route'];
+  if(h.kind==='person') return ['인물','person'];
+  if(h.kind==='eraPlace') return ['시대지명','era'];
+  return ['시대','era'];
+}
 function runSearch(q){
   q=q.trim();
   sClr.style.display=q?'block':'none';
-  if(!q){ sRes.classList.remove('show'); sRes.innerHTML=''; return; }
-  const hits=PLACES.filter(p=>p.nm.includes(q)||(p.now&&p.now.includes(q)));
-  if(!hits.length){
-    sRes.innerHTML='<div class="sr none">검색 결과가 없어요. (성경 지명만 검색됩니다)</div>';
+  if(!q){ searchHits=[]; sRes.classList.remove('show'); sRes.innerHTML=''; return; }
+  searchHits=buildSearchHits(q);
+  if(!searchHits.length){
+    sRes.innerHTML='<div class="sr none">검색 결과가 없어요.</div>';
   }else{
-    sRes.innerHTML=hits.map(p=>
-      '<div class="sr" data-nm="'+p.nm+'"><span class="srn">'+p.nm+'</span>'
-      +'<span class="srnow">'+(p.now||'')+'</span></div>').join('');
+    sRes.innerHTML=searchHits.map((h,i)=>{
+      const tp=resultType(h);
+      return '<div class="sr" data-si="'+i+'"><div class="srhead"><span class="srtype '+tp[1]+'">'+tp[0]+'</span>'
+        +'<span class="srn">'+searchEsc(h.label)+'</span></div><span class="srnow">'+searchEsc(h.sub)+'</span></div>';
+    }).join('');
   }
   sRes.classList.add('show');
+}
+function clearSearchUI(){ sRes.classList.remove('show'); sIn.value=''; sClr.style.display='none'; searchHits=[]; }
+function openRouteSearchHit(h){
+  const r=h.route;
+  activateMainTab(r.era);
+  if(!routeOn[r.id]) setRoute(r,true);
+  activeRoute=r; renderRouteToggles();
+  openStop(r,h.stopIndex||0);
+}
+function openEraSearchHit(h){
+  activateMainTab('시대별');
+  drawEra(h.eraIndex);
+  if(h.kind==='person'){
+    const p=h.person; showEraInfo(h.era,p[2],p[3],p[4]);
+    setTimeout(()=>centerAbovePanel([p[0],p[1]],8),0);
+  }else if(h.kind==='eraPlace'){
+    const c=h.capital; showEraInfo(h.era,c[2],c[3],'');
+    setTimeout(()=>centerAbovePanel([c[0],c[1]],8),0);
+  }else{
+    showEraInfo(h.era,h.era.label,h.era.desc,h.era.book);
+  }
 }
 sIn.addEventListener('input',e=>runSearch(e.target.value));
 sClr.addEventListener('click',()=>{ sIn.value=''; runSearch(''); sIn.focus(); });
 sRes.addEventListener('click',e=>{
-  const el=e.target.closest('.sr[data-nm]'); if(!el) return;
-  const p=PLACES.find(x=>x.nm===el.dataset.nm);
-  // 그 지명이 보이는 탭으로 전환
-  if(!p.era.includes(curEra)){
-    const want=p.era[0];
-    document.querySelectorAll('.tab').forEach(t=>{
-      t.classList.toggle('active',t.dataset.era===want);
-    });
-    curEra=want; clearOtherEraRoutes(); renderMarkers(); renderRouteToggles();
+  const el=e.target.closest('.sr[data-si]'); if(!el) return;
+  const h=searchHits[+el.dataset.si]; if(!h) return;
+  clearSearchUI();
+  if(h.kind==='place'){
+    const p=h.place;
+    if(!p.era.includes(curEra) || curEra==='시대별') activateMainTab(p.era[0]);
+    map.setView([p.lat,p.lng],9); openPanel(p);
+  }else if(h.kind==='route'||h.kind==='routeStop'){
+    openRouteSearchHit(h);
+  }else{
+    openEraSearchHit(h);
   }
-  sRes.classList.remove('show'); sIn.value=''; sClr.style.display='none';
-  map.setView([p.lat,p.lng],9);
-  openPanel(p);
 });
 document.addEventListener('click',e=>{
   if(!e.target.closest('#searchbar')) sRes.classList.remove('show');
