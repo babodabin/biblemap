@@ -142,6 +142,7 @@
     background:#f0e6d0;border-radius:11px;padding:3px 9px;margin-top:6px;margin-bottom:2px;}
   .empty{font-size:13px;color:#a89878;margin-top:12px;}
   .leaflet-control-attribution{font-size:9px;}
+  .soft-tiles{filter:saturate(0.6) brightness(1.03);}
 
   /* 여정 경유지 순번 핀 */
   .rstop{display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-50%);cursor:pointer;padding:4px;}
@@ -618,9 +619,9 @@ function eventEra(v){
 
 // 지도 초기화 — 가나안 중심
 const map=L.map('map',{ zoomControl:true, attributionControl:true, minZoom:3, maxZoom:18 }).setView([31.8,35.2], 8);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
-  maxZoom:18, minZoom:3, subdomains:'abcd',
-  attribution:'© OpenStreetMap, © CARTO'
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{
+  maxZoom:18, minZoom:3, className:'soft-tiles', referrerPolicy:'no-referrer',
+  attribution:'Tiles © Esri'
 }).addTo(map);
 
 // 상단 도구 접기/펼치기 — 기본은 접어서 지도를 넓게 표시
